@@ -1,0 +1,8 @@
+FROM node:20-alpine AS build
+WORKDIR /src
+COPY frontend/package.json frontend/vite.config.js frontend/index.html frontend/src /src/
+RUN npm install && npm run build
+
+FROM nginx:alpine
+COPY --from=build /src/dist /usr/share/nginx/html
+EXPOSE 80

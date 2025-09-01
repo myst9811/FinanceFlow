@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  api:
+    build:
+      context: .
+    image: financeflow-api
+    container_name: financeflow-api
+    ports: ["8000:8000"]
+    command: python app.py
+    working_dir: /app
+    volumes:
+      - ./backend:/app
+  web:
+    image: node:20
+    container_name: financeflow-web
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: bash -lc "npm install && npm run dev -- --host"
+    ports: ["5173:5173"]
