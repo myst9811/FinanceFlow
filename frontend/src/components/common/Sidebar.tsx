@@ -1,20 +1,20 @@
 import React, { useState } from 'react';
-import { 
-  HomeIcon, 
-  CreditCardIcon, 
-  ChartBarIcon, 
-  FlagIcon,  // Changed from TargetIcon
+import {
+  HomeIcon,
+  CreditCardIcon,
+  ChartBarIcon,
+  FlagIcon,
   CogIcon,
   Bars3Icon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-import type { NavigationItem } from '../../types/index.js';
+import type { NavigationItem } from '../../types';
 
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
   { name: 'Transactions', href: '/transactions', icon: CreditCardIcon },
   { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
-  { name: 'Goals', href: '/goals', icon: FlagIcon }, // Changed from TargetIcon
+  { name: 'Goals', href: '/goals', icon: FlagIcon },
   { name: 'Settings', href: '/settings', icon: CogIcon },
 ];
 
@@ -64,7 +64,7 @@ const Sidebar: React.FC = () => {
 
       {/* Overlay for mobile */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
           onClick={() => setIsOpen(false)}
         />

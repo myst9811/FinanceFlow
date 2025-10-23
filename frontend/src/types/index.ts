@@ -45,3 +45,18 @@ export interface DashboardStats {
   monthlyExpenses: number;
   savingsRate: number;
 }
+
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+  category: string;
+}
+
+export interface NavigationItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
