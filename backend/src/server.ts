@@ -3,8 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
-
-  
+import authRoutes from './routes/auth.routes';
 
 dotenv.config();
 const app = express();
@@ -36,16 +35,13 @@ app.get('/health', (req, res) => {
   
 
 // Routes
+app.use('/api/auth', authRoutes);
 
-app.use('/api/auth', require('./routes/auth'));
-
-app.use('/api/accounts', require('./routes/accounts'));
-
-app.use('/api/transactions', require('./routes/transactions'));
-
-app.use('/api/goals', require('./routes/goals'));
-
-app.use('/api/insights', require('./routes/insights'));
+// TODO: Implement remaining routes
+// app.use('/api/accounts', accountRoutes);
+// app.use('/api/transactions', transactionRoutes);
+// app.use('/api/goals', goalRoutes);
+// app.use('/api/insights', insightRoutes);
 
   
 
