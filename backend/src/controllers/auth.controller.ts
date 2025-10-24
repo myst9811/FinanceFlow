@@ -59,9 +59,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       email: user.email,
     };
 
-    const token = jwt.sign(payload, jwtSecret, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    });
+    const token = jwt.sign(
+      payload,
+      jwtSecret,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
+    );
 
     const response: AuthResponse = {
       user: {
@@ -119,9 +121,11 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       email: user.email,
     };
 
-    const token = jwt.sign(payload, jwtSecret, {
-      expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-    });
+    const token = jwt.sign(
+      payload,
+      jwtSecret,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
+    );
 
     const response: AuthResponse = {
       user: {
