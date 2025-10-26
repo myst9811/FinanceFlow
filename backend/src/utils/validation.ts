@@ -63,3 +63,56 @@ export const validateLoginInput = (
 
   return { valid: true };
 };
+
+// Account validation
+const validAccountTypes = ['CHECKING', 'SAVINGS', 'CREDIT', 'INVESTMENT'];
+const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
+
+export const validateAccountInput = (
+  name: string,
+  type: string,
+  balance?: number,
+  currency?: string
+): { valid: boolean; error?: string } => {
+  if (!name || !type) {
+    return { valid: false, error: 'Account name and type are required' };
+  }
+
+  if (name.trim().length < 2) {
+    return { valid: false, error: 'Account name must be at least 2 characters' };
+  }
+
+  if (!validAccountTypes.includes(type)) {
+    return { valid: false, error: `Account type must be one of: ${validAccountTypes.join(', ')}` };
+  }
+
+  if (balance !== undefined && (isNaN(balance) || balance < 0)) {
+    return { valid: false, error: 'Balance must be a non-negative number' };
+  }
+
+  if (currency && !validCurrencies.includes(currency)) {
+    return { valid: false, error: `Currency must be one of: ${validCurrencies.join(', ')}` };
+  }
+
+  return { valid: true };
+};
+
+export const validateAccountUpdate = (
+  name?: string,
+  balance?: number,
+  isActive?: boolean
+): { valid: boolean; error?: string } => {
+  if (name !== undefined && name.trim().length < 2) {
+    return { valid: false, error: 'Account name must be at least 2 characters' };
+  }
+
+  if (balance !== undefined && (isNaN(balance) || balance < 0)) {
+    return { valid: false, error: 'Balance must be a non-negative number' };
+  }
+
+  if (isActive !== undefined && typeof isActive !== 'boolean') {
+    return { valid: false, error: 'isActive must be a boolean value' };
+  }
+
+  return { valid: true };
+};
