@@ -116,3 +116,85 @@ export const validateAccountUpdate = (
 
   return { valid: true };
 };
+
+// Transaction validation
+const validTransactionTypes = ['INCOME', 'EXPENSE', 'TRANSFER'];
+const validTransactionCategories = [
+  'FOOD_DINING',
+  'TRANSPORTATION',
+  'SHOPPING',
+  'ENTERTAINMENT',
+  'BILLS_UTILITIES',
+  'HEALTHCARE',
+  'EDUCATION',
+  'TRAVEL',
+  'INCOME_SALARY',
+  'INCOME_BUSINESS',
+  'TRANSFER',
+  'OTHER',
+];
+
+export const validateTransactionInput = (
+  accountId: string,
+  amount: number,
+  description: string,
+  category: string,
+  type: string,
+  date: string
+): { valid: boolean; error?: string } => {
+  if (!accountId || !description || !category || !type || !date) {
+    return { valid: false, error: 'Account ID, amount, description, category, type, and date are required' };
+  }
+
+  if (description.trim().length < 2) {
+    return { valid: false, error: 'Description must be at least 2 characters' };
+  }
+
+  if (isNaN(amount) || amount <= 0) {
+    return { valid: false, error: 'Amount must be a positive number' };
+  }
+
+  if (!validTransactionTypes.includes(type)) {
+    return { valid: false, error: `Transaction type must be one of: ${validTransactionTypes.join(', ')}` };
+  }
+
+  if (!validTransactionCategories.includes(category)) {
+    return { valid: false, error: `Category must be one of: ${validTransactionCategories.join(', ')}` };
+  }
+
+  // Validate date format
+  const transactionDate = new Date(date);
+  if (isNaN(transactionDate.getTime())) {
+    return { valid: false, error: 'Invalid date format' };
+  }
+
+  return { valid: true };
+};
+
+export const validateTransactionUpdate = (
+  amount?: number,
+  description?: string,
+  category?: string,
+  date?: string
+): { valid: boolean; error?: string } => {
+  if (description !== undefined && description.trim().length < 2) {
+    return { valid: false, error: 'Description must be at least 2 characters' };
+  }
+
+  if (amount !== undefined && (isNaN(amount) || amount <= 0)) {
+    return { valid: false, error: 'Amount must be a positive number' };
+  }
+
+  if (category !== undefined && !validTransactionCategories.includes(category)) {
+    return { valid: false, error: `Category must be one of: ${validTransactionCategories.join(', ')}` };
+  }
+
+  if (date !== undefined) {
+    const transactionDate = new Date(date);
+    if (isNaN(transactionDate.getTime())) {
+      return { valid: false, error: 'Invalid date format' };
+    }
+  }
+
+  return { valid: true };
+};
