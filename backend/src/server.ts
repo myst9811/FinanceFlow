@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import accountRoutes from './routes/account.routes';
 import transactionRoutes from './routes/transaction.routes';
+import goalRoutes from './routes/goal.routes';
 
 dotenv.config();
 const app = express();
@@ -40,9 +41,9 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/goals', goalRoutes);
 
 // TODO: Implement remaining routes
-// app.use('/api/goals', goalRoutes);
 // app.use('/api/insights', insightRoutes);
 
   
