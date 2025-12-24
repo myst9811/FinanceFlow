@@ -2,7 +2,13 @@ node_modules
 # Keep environment variables out of version control
 .env
 
+# Prisma generated files
 /src/generated/prisma
 
-*.js
+# Build output
+dist
 *.js.map
+
+# Compiled JS files in src (TypeScript source should be .ts only)
+/src/**/*.js
+!/src/generated/**/*.js
