@@ -18,7 +18,7 @@ An intelligent personal finance management system that aggregates financial data
 - Infrastructure: Docker, AWS/GCP
 
 ## Quick Start
-[Installation instructions]
+See [docs/SETUP.md](docs/SETUP.md) for full local setup instructions (install deps, start the dev database, run migrations, start both apps).
 
 ## Documentation
 - [API Documentation](docs/API.md)
