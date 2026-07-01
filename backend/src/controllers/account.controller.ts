@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { PrismaClient } from '../generated/prisma';
+import { prisma } from '../lib/prisma';
 import {
   CreateAccountRequest,
   UpdateAccountRequest,
@@ -7,8 +7,6 @@ import {
   AuthenticatedRequest,
 } from '../types/account.types';
 import { validateAccountInput, validateAccountUpdate } from '../utils/validation';
-
-const prisma = new PrismaClient();
 
 // Create a new account
 export const createAccount = async (
