@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { PrismaClient } from '../generated/prisma';
+import { prisma } from '../lib/prisma';
 import {
   CreateTransactionRequest,
   UpdateTransactionRequest,
@@ -7,8 +7,6 @@ import {
   TransactionFilters,
 } from '../types/transaction.types';
 import { validateTransactionInput, validateTransactionUpdate } from '../utils/validation';
-
-const prisma = new PrismaClient();
 
 // Create a new transaction
 export const createTransaction = async (
