@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import accountRoutes from './routes/account.routes';
 import transactionRoutes from './routes/transaction.routes';
 import goalRoutes from './routes/goal.routes';
+import { notFoundHandler, errorHandler } from './middleware/error.middleware';
 
 const app = express();
 
@@ -46,16 +47,10 @@ app.use('/api/goals', goalRoutes);
 
   
 
-// Error handling middleware
+// 404 + error handling middleware
 
-app.use((err: any, req: any, res: any, next: any) => {
-
-  console.error(err.stack);
-
-  res.status(500).json({ error: 'Something went wrong!' });
-
-});
-
+app.use(notFoundHandler);
+app.use(errorHandler);
   
 
 app.listen(config.port, () => {
