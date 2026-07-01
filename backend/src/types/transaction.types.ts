@@ -3,6 +3,7 @@ import { TransactionType, TransactionCategory } from '../generated/prisma';
 
 export interface CreateTransactionRequest {
   accountId: string;
+  toAccountId?: string;
   amount: number;
   description: string;
   category: TransactionCategory;
@@ -23,6 +24,7 @@ export interface TransactionResponse {
   id: string;
   userId: string;
   accountId: string;
+  toAccountId: string | null;
   amount: number;
   description: string;
   category: TransactionCategory;

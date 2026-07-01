@@ -140,7 +140,8 @@ export const validateTransactionInput = (
   description: string,
   category: string,
   type: string,
-  date: string
+  date: string,
+  toAccountId?: string
 ): { valid: boolean; error?: string } => {
   if (!accountId || !description || !category || !type || !date) {
     return { valid: false, error: 'Account ID, amount, description, category, type, and date are required' };
@@ -166,6 +167,17 @@ export const validateTransactionInput = (
   const transactionDate = new Date(date);
   if (isNaN(transactionDate.getTime())) {
     return { valid: false, error: 'Invalid date format' };
+  }
+
+  if (type === 'TRANSFER') {
+    if (!toAccountId) {
+      return { valid: false, error: 'toAccountId is required for TRANSFER transactions' };
+    }
+    if (toAccountId === accountId) {
+      return { valid: false, error: 'toAccountId must be different from accountId' };
+    }
+  } else if (toAccountId) {
+    return { valid: false, error: 'toAccountId is only valid for TRANSFER transactions' };
   }
 
   return { valid: true };
