@@ -1,13 +1,19 @@
 import { Response } from 'express';
-import { prisma } from '../lib/prisma';
 import {
   CreateTransactionRequest,
   UpdateTransactionRequest,
   AuthenticatedRequest,
-  TransactionFilters,
 } from '../types/transaction.types';
 import { validateTransactionInput, validateTransactionUpdate } from '../utils/validation';
 import { ApiError } from '../utils/ApiError';
+import {
+  createTransactionForUser,
+  getTransactionsForUser,
+  getTransactionByIdForUser,
+  updateTransactionForUser,
+  deleteTransactionForUser,
+  getTransactionStatsForUser,
+} from '../services/transaction.service';
 
 // Create a new transaction
 export const createTransaction = async (
@@ -18,59 +24,22 @@ export const createTransaction = async (
     throw new ApiError(401, 'Not authenticated');
   }
 
-  const { accountId, amount, description, category, type, date, tags }: CreateTransactionRequest = req.body;
+  const { accountId, toAccountId, amount, description, category, type, date, tags }: CreateTransactionRequest = req.body;
 
-  // Validate input
-  const validation = validateTransactionInput(accountId, amount, description, category, type, date);
+  const validation = validateTransactionInput(accountId, amount, description, category, type, date, toAccountId);
   if (!validation.valid) {
     throw new ApiError(400, validation.error!);
   }
 
-  // Verify account exists and belongs to user
-  const account = await prisma.account.findFirst({
-    where: {
-      id: accountId,
-      userId: req.user.userId,
-    },
-  });
-
-  if (!account) {
-    throw new ApiError(404, 'Account not found');
-  }
-
-  // Create transaction
-  const transaction = await prisma.transaction.create({
-    data: {
-      userId: req.user.userId,
-      accountId,
-      amount,
-      description: description.trim(),
-      category,
-      type,
-      date: new Date(date),
-      tags: tags || [],
-    },
-    include: {
-      account: {
-        select: {
-          name: true,
-          type: true,
-        },
-      },
-    },
-  });
-
-  // Update account balance based on transaction type
-  let newBalance = account.balance;
-  if (type === 'INCOME') {
-    newBalance += amount;
-  } else if (type === 'EXPENSE') {
-    newBalance -= amount;
-  }
-
-  await prisma.account.update({
-    where: { id: accountId },
-    data: { balance: newBalance },
+  const transaction = await createTransactionForUser(req.user.userId, {
+    accountId,
+    toAccountId,
+    amount,
+    description,
+    category,
+    type,
+    date,
+    tags,
   });
 
   res.status(201).json({ transaction });
@@ -96,63 +65,15 @@ export const getTransactions = async (
     search,
   } = req.query as any;
 
-  // Build filter object
-  const where: any = {
-    userId: req.user.userId,
-  };
-
-  if (accountId) {
-    where.accountId = accountId;
-  }
-
-  if (type) {
-    where.type = type;
-  }
-
-  if (category) {
-    where.category = category;
-  }
-
-  if (startDate || endDate) {
-    where.date = {};
-    if (startDate) {
-      where.date.gte = new Date(startDate);
-    }
-    if (endDate) {
-      where.date.lte = new Date(endDate);
-    }
-  }
-
-  if (minAmount !== undefined || maxAmount !== undefined) {
-    where.amount = {};
-    if (minAmount !== undefined) {
-      where.amount.gte = parseFloat(minAmount);
-    }
-    if (maxAmount !== undefined) {
-      where.amount.lte = parseFloat(maxAmount);
-    }
-  }
-
-  if (search) {
-    where.description = {
-      contains: search,
-      mode: 'insensitive',
-    };
-  }
-
-  const transactions = await prisma.transaction.findMany({
-    where,
-    include: {
-      account: {
-        select: {
-          name: true,
-          type: true,
-        },
-      },
-    },
-    orderBy: {
-      date: 'desc',
-    },
+  const transactions = await getTransactionsForUser(req.user.userId, {
+    accountId,
+    type,
+    category,
+    startDate,
+    endDate,
+    minAmount: minAmount !== undefined ? parseFloat(minAmount) : undefined,
+    maxAmount: maxAmount !== undefined ? parseFloat(maxAmount) : undefined,
+    search,
   });
 
   res.status(200).json({ transactions, count: transactions.length });
@@ -168,25 +89,7 @@ export const getTransactionById = async (
   }
 
   const { id } = req.params;
-
-  const transaction = await prisma.transaction.findFirst({
-    where: {
-      id,
-      userId: req.user.userId,
-    },
-    include: {
-      account: {
-        select: {
-          name: true,
-          type: true,
-        },
-      },
-    },
-  });
-
-  if (!transaction) {
-    throw new ApiError(404, 'Transaction not found');
-  }
+  const transaction = await getTransactionByIdForUser(req.user.userId, id);
 
   res.status(200).json({ transaction });
 };
@@ -203,65 +106,17 @@ export const updateTransaction = async (
   const { id } = req.params;
   const { amount, description, category, date, tags }: UpdateTransactionRequest = req.body;
 
-  // Validate input
   const validation = validateTransactionUpdate(amount, description, category, date);
   if (!validation.valid) {
     throw new ApiError(400, validation.error!);
   }
 
-  // Check if transaction exists and belongs to user
-  const existingTransaction = await prisma.transaction.findFirst({
-    where: {
-      id,
-      userId: req.user.userId,
-    },
-  });
-
-  if (!existingTransaction) {
-    throw new ApiError(404, 'Transaction not found');
-  }
-
-  // If amount is being updated, adjust account balance
-  if (amount !== undefined && amount !== existingTransaction.amount) {
-    const account = await prisma.account.findUnique({
-      where: { id: existingTransaction.accountId },
-    });
-
-    if (account) {
-      let balanceAdjustment = 0;
-      const amountDiff = amount - existingTransaction.amount;
-
-      if (existingTransaction.type === 'INCOME') {
-        balanceAdjustment = amountDiff;
-      } else if (existingTransaction.type === 'EXPENSE') {
-        balanceAdjustment = -amountDiff;
-      }
-
-      await prisma.account.update({
-        where: { id: account.id },
-        data: { balance: account.balance + balanceAdjustment },
-      });
-    }
-  }
-
-  // Update transaction
-  const transaction = await prisma.transaction.update({
-    where: { id },
-    data: {
-      ...(amount !== undefined && { amount }),
-      ...(description && { description: description.trim() }),
-      ...(category && { category }),
-      ...(date && { date: new Date(date) }),
-      ...(tags !== undefined && { tags }),
-    },
-    include: {
-      account: {
-        select: {
-          name: true,
-          type: true,
-        },
-      },
-    },
+  const transaction = await updateTransactionForUser(req.user.userId, id, {
+    amount,
+    description,
+    category,
+    date,
+    tags,
   });
 
   res.status(200).json({ transaction });
@@ -277,43 +132,7 @@ export const deleteTransaction = async (
   }
 
   const { id } = req.params;
-
-  // Check if transaction exists and belongs to user
-  const existingTransaction = await prisma.transaction.findFirst({
-    where: {
-      id,
-      userId: req.user.userId,
-    },
-  });
-
-  if (!existingTransaction) {
-    throw new ApiError(404, 'Transaction not found');
-  }
-
-  // Adjust account balance before deletion
-  const account = await prisma.account.findUnique({
-    where: { id: existingTransaction.accountId },
-  });
-
-  if (account) {
-    let balanceAdjustment = 0;
-
-    if (existingTransaction.type === 'INCOME') {
-      balanceAdjustment = -existingTransaction.amount;
-    } else if (existingTransaction.type === 'EXPENSE') {
-      balanceAdjustment = existingTransaction.amount;
-    }
-
-    await prisma.account.update({
-      where: { id: account.id },
-      data: { balance: account.balance + balanceAdjustment },
-    });
-  }
-
-  // Delete transaction
-  await prisma.transaction.delete({
-    where: { id },
-  });
+  await deleteTransactionForUser(req.user.userId, id);
 
   res.status(200).json({ message: 'Transaction deleted successfully' });
 };
@@ -329,62 +148,11 @@ export const getTransactionStats = async (
 
   const { startDate, endDate, accountId } = req.query as any;
 
-  // Build filter
-  const where: any = {
-    userId: req.user.userId,
-  };
-
-  if (accountId) {
-    where.accountId = accountId;
-  }
-
-  if (startDate || endDate) {
-    where.date = {};
-    if (startDate) {
-      where.date.gte = new Date(startDate);
-    }
-    if (endDate) {
-      where.date.lte = new Date(endDate);
-    }
-  }
-
-  const transactions = await prisma.transaction.findMany({
-    where,
+  const stats = await getTransactionStatsForUser(req.user.userId, {
+    accountId,
+    startDate,
+    endDate,
   });
-
-  // Calculate statistics
-  const totalIncome = transactions
-    .filter(t => t.type === 'INCOME')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const totalExpenses = transactions
-    .filter(t => t.type === 'EXPENSE')
-    .reduce((sum, t) => sum + t.amount, 0);
-
-  const netIncome = totalIncome - totalExpenses;
-
-  // Group by category
-  const byCategory: Record<string, number> = {};
-  transactions.forEach(t => {
-    if (!byCategory[t.category]) {
-      byCategory[t.category] = 0;
-    }
-    byCategory[t.category] += t.type === 'EXPENSE' ? t.amount : 0;
-  });
-
-  // Get recent transactions (last 5)
-  const recentTransactions = transactions
-    .sort((a, b) => b.date.getTime() - a.date.getTime())
-    .slice(0, 5);
-
-  const stats = {
-    totalTransactions: transactions.length,
-    totalIncome,
-    totalExpenses,
-    netIncome,
-    byCategory,
-    recentTransactions,
-  };
 
   res.status(200).json({ stats });
 };
