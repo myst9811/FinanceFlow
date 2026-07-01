@@ -49,12 +49,26 @@ npm run dev:backend   # http://localhost:3001
 npm run dev:frontend  # http://localhost:5173
 ```
 
+## Running backend tests
+
+Backend tests run against a separate `financeflow_test` database so they never touch dev data.
+
+```bash
+cp backend/.env.test.example backend/.env.test
+docker exec financeflow-db-1 createdb -U financeflow financeflow_test
+cd backend && DATABASE_URL="postgresql://financeflow:financeflow@localhost:5432/financeflow_test?schema=public" npx prisma migrate deploy
+npm test
+```
+
+The `createdb` and `migrate deploy` steps only need to be run once (or again after adding new migrations). From the repo root you can also run `npm run test:backend`.
+
 ## Verifying your setup
 
 ```bash
 npm run build:backend
 npm run build:frontend
 npm run lint:frontend
+npm run test:backend
 ```
 
-All three should complete without errors.
+All four should complete without errors.
