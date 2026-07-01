@@ -1,13 +1,11 @@
 import { Response } from 'express';
-import { PrismaClient } from '../generated/prisma';
+import { prisma } from '../lib/prisma';
 import {
   CreateGoalRequest,
   UpdateGoalRequest,
   AuthenticatedRequest,
 } from '../types/goal.types';
 import { validateGoalInput, validateGoalUpdate } from '../utils/validation';
-
-const prisma = new PrismaClient();
 
 // Helper function to calculate goal progress metrics
 const calculateGoalMetrics = (goal: any) => {
