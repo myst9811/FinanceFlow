@@ -2,22 +2,20 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
+import { config } from './config/env';
 import authRoutes from './routes/auth.routes';
 import accountRoutes from './routes/account.routes';
 import transactionRoutes from './routes/transaction.routes';
 import goalRoutes from './routes/goal.routes';
 
-dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 3001;
 
-  
+
 // Middleware
 
 app.use(helmet());
 
-app.use(cors());
+app.use(cors({ origin: config.corsOrigins }));
 
 app.use(morgan('combined'));
 
@@ -60,8 +58,8 @@ app.use((err: any, req: any, res: any, next: any) => {
 
   
 
-app.listen(PORT, () => {
+app.listen(config.port, () => {
 
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${config.port}`);
 
 });
