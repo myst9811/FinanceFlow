@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { config } from '../config/env';
 import {
   RegisterRequest,
   LoginRequest,
@@ -47,11 +48,6 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
 
     // Generate JWT token
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET not configured');
-    }
-
     const payload: JwtPayload = {
       userId: user.id,
       email: user.email,
@@ -59,8 +55,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     const token = jwt.sign(
       payload,
-      jwtSecret,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
+      config.jwtSecret,
+      { expiresIn: config.jwtExpiresIn } as jwt.SignOptions
     );
 
     const response: AuthResponse = {
@@ -109,11 +105,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Generate JWT token
-    const jwtSecret = process.env.JWT_SECRET;
-    if (!jwtSecret) {
-      throw new Error('JWT_SECRET not configured');
-    }
-
     const payload: JwtPayload = {
       userId: user.id,
       email: user.email,
@@ -121,8 +112,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
     const token = jwt.sign(
       payload,
-      jwtSecret,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions
+      config.jwtSecret,
+      { expiresIn: config.jwtExpiresIn } as jwt.SignOptions
     );
 
     const response: AuthResponse = {
