@@ -22,6 +22,14 @@ function lastMonthDate(day = 10): Date {
   return new Date(now.getFullYear(), now.getMonth() - 1, day);
 }
 
+function daysAgo(n: number): Date {
+  return new Date(Date.now() - n * 24 * 60 * 60 * 1000);
+}
+
+function daysFromNow(n: number): Date {
+  return new Date(Date.now() + n * 24 * 60 * 60 * 1000);
+}
+
 beforeEach(async () => {
   const user = await prisma.user.create({
     data: {
@@ -275,6 +283,52 @@ describe('generateInsightsForUser - BUDGET_RECOMMENDATION', () => {
     await generateInsightsForUser(userId);
 
     const insights = await prisma.insight.findMany({ where: { userId, type: 'BUDGET_RECOMMENDATION' } });
+    expect(insights).toHaveLength(0);
+  });
+});
+
+describe('generateInsightsForUser - GOAL_PROGRESS', () => {
+  it('creates a HIGH priority insight when a goal is completed', async () => {
+    await prisma.goal.create({
+      data: {
+        userId, title: 'Emergency Fund', targetAmount: 1000, currentAmount: 1000,
+        targetDate: daysFromNow(30), category: 'EMERGENCY_FUND', createdAt: daysAgo(10),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'GOAL_PROGRESS' } });
+    expect(insights).toHaveLength(1);
+    expect(insights[0]).toMatchObject({ title: "Goal 'Emergency Fund' completed!", priority: 'HIGH' });
+  });
+
+  it('creates a MEDIUM priority insight when a goal is more than 20 points behind pace', async () => {
+    await prisma.goal.create({
+      data: {
+        userId, title: 'Vacation', targetAmount: 1000, currentAmount: 100,
+        targetDate: daysFromNow(100), category: 'VACATION', createdAt: daysAgo(100),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'GOAL_PROGRESS' } });
+    expect(insights).toHaveLength(1);
+    expect(insights[0]).toMatchObject({ title: "Goal 'Vacation' is behind pace", priority: 'MEDIUM' });
+  });
+
+  it('does not create an insight when a goal is on pace', async () => {
+    await prisma.goal.create({
+      data: {
+        userId, title: 'Vacation', targetAmount: 1000, currentAmount: 450,
+        targetDate: daysFromNow(100), category: 'VACATION', createdAt: daysAgo(100),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'GOAL_PROGRESS' } });
     expect(insights).toHaveLength(0);
   });
 });

@@ -168,11 +168,50 @@ async function checkBudgetRecommendation(userId: string): Promise<InsightCandida
   return [];
 }
 
+async function checkGoalProgress(userId: string): Promise<InsightCandidate[]> {
+  const goals = await prisma.goal.findMany({ where: { userId, isActive: true } });
+  const now = new Date();
+  const candidates: InsightCandidate[] = [];
+
+  for (const goal of goals) {
+    if (goal.currentAmount >= goal.targetAmount) {
+      candidates.push({
+        type: 'GOAL_PROGRESS',
+        title: `Goal '${goal.title}' completed!`,
+        description: `You've reached your target of $${goal.targetAmount.toFixed(2)} for '${goal.title}'.`,
+        priority: 'HIGH',
+      });
+      continue;
+    }
+
+    const totalDuration = goal.targetDate.getTime() - goal.createdAt.getTime();
+    if (totalDuration <= 0) {
+      continue;
+    }
+
+    const elapsed = now.getTime() - goal.createdAt.getTime();
+    const expectedPct = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+    const actualPct = (goal.currentAmount / goal.targetAmount) * 100;
+
+    if (expectedPct - actualPct > 20) {
+      candidates.push({
+        type: 'GOAL_PROGRESS',
+        title: `Goal '${goal.title}' is behind pace`,
+        description: `You're at ${Math.round(actualPct)}% of your goal but ${Math.round(expectedPct)}% of the timeline has passed.`,
+        priority: 'MEDIUM',
+      });
+    }
+  }
+
+  return candidates;
+}
+
 export async function generateInsightsForUser(userId: string): Promise<void> {
   const results = await Promise.all([
     checkSpendingAlerts(userId),
     checkSavingsOpportunity(userId),
     checkBudgetRecommendation(userId),
+    checkGoalProgress(userId),
   ]);
   const candidates = results.flat();
 
