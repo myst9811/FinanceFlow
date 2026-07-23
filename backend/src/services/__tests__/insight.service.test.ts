@@ -216,3 +216,34 @@ describe('generateInsightsForUser - SPENDING_ALERT', () => {
     expect(insights).toHaveLength(0);
   });
 });
+
+describe('generateInsightsForUser - SAVINGS_OPPORTUNITY', () => {
+  it('creates an insight when discretionary spending is at least 30% of income', async () => {
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 2000, description: 'salary', category: 'INCOME_SALARY', type: 'INCOME', date: thisMonthDate() },
+    });
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 700, description: 'shopping spree', category: 'SHOPPING', type: 'EXPENSE', date: thisMonthDate() },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'SAVINGS_OPPORTUNITY' } });
+    expect(insights).toHaveLength(1);
+    expect(insights[0].priority).toBe('LOW');
+  });
+
+  it('does not create an insight when discretionary spending is below 30% of income', async () => {
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 2000, description: 'salary', category: 'INCOME_SALARY', type: 'INCOME', date: thisMonthDate() },
+    });
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 400, description: 'shopping', category: 'SHOPPING', type: 'EXPENSE', date: thisMonthDate() },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'SAVINGS_OPPORTUNITY' } });
+    expect(insights).toHaveLength(0);
+  });
+});

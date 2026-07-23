@@ -114,8 +114,42 @@ async function checkSpendingAlerts(userId: string): Promise<InsightCandidate[]> 
   return candidates;
 }
 
+const DISCRETIONARY_CATEGORIES: TransactionCategory[] = ['SHOPPING', 'ENTERTAINMENT', 'TRAVEL'];
+
+async function checkSavingsOpportunity(userId: string): Promise<InsightCandidate[]> {
+  const thisMonthStart = startOfMonth(new Date(), 0);
+
+  const [expenses, incomes] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { userId, type: 'EXPENSE', category: { in: DISCRETIONARY_CATEGORIES }, date: { gte: thisMonthStart } },
+    }),
+    prisma.transaction.findMany({
+      where: { userId, type: 'INCOME', date: { gte: thisMonthStart } },
+    }),
+  ]);
+
+  const discretionaryTotal = expenses.reduce((sum, t) => sum + t.amount, 0);
+  const incomeTotal = incomes.reduce((sum, t) => sum + t.amount, 0);
+
+  if (incomeTotal > 0 && discretionaryTotal >= incomeTotal * 0.3) {
+    const pct = Math.round((discretionaryTotal / incomeTotal) * 100);
+    return [{
+      type: 'SAVINGS_OPPORTUNITY',
+      title: 'Discretionary spending opportunity',
+      description: `You've spent $${discretionaryTotal.toFixed(2)} (${pct}% of income) on shopping, entertainment, and travel this month.`,
+      priority: 'LOW',
+    }];
+  }
+
+  return [];
+}
+
 export async function generateInsightsForUser(userId: string): Promise<void> {
-  const candidates = await checkSpendingAlerts(userId);
+  const results = await Promise.all([
+    checkSpendingAlerts(userId),
+    checkSavingsOpportunity(userId),
+  ]);
+  const candidates = results.flat();
 
   for (const candidate of candidates) {
     await prisma.insight.create({ data: { userId, ...candidate } });
