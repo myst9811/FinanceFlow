@@ -100,16 +100,9 @@ export interface Account {
 }
 
 export interface AccountSummary {
+  totalAccounts: number;
   totalBalance: number;
-  totalChecking: number;
-  totalSavings: number;
-  totalCredit: number;
-  totalInvestment: number;
-  accountsByType: {
-    type: AccountType;
-    count: number;
-    totalBalance: number;
-  }[];
+  byType: Record<AccountType, number>;
 }
 
 // Transaction Types
