@@ -332,3 +332,72 @@ describe('generateInsightsForUser - GOAL_PROGRESS', () => {
     expect(insights).toHaveLength(0);
   });
 });
+
+describe('generateInsightsForUser - UNUSUAL_ACTIVITY', () => {
+  it('creates a HIGH priority insight for a transaction more than double the category average', async () => {
+    for (let i = 0; i < 5; i++) {
+      await prisma.transaction.create({
+        data: {
+          userId, accountId, amount: 50, description: `dinner ${i}`, category: 'FOOD_DINING',
+          type: 'EXPENSE', date: daysAgo(30 + i),
+        },
+      });
+    }
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 150, description: 'expensive dinner', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: daysAgo(1),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'UNUSUAL_ACTIVITY' } });
+    expect(insights).toHaveLength(1);
+    expect(insights[0]).toMatchObject({ title: 'Unusual transaction: expensive dinner', priority: 'HIGH' });
+  });
+
+  it('does not create an insight without at least 5 prior transactions in the category', async () => {
+    for (let i = 0; i < 3; i++) {
+      await prisma.transaction.create({
+        data: {
+          userId, accountId, amount: 50, description: `dinner ${i}`, category: 'FOOD_DINING',
+          type: 'EXPENSE', date: daysAgo(30 + i),
+        },
+      });
+    }
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 150, description: 'expensive dinner', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: daysAgo(1),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'UNUSUAL_ACTIVITY' } });
+    expect(insights).toHaveLength(0);
+  });
+
+  it('does not create an insight when the amount is not more than double the average', async () => {
+    for (let i = 0; i < 5; i++) {
+      await prisma.transaction.create({
+        data: {
+          userId, accountId, amount: 50, description: `dinner ${i}`, category: 'FOOD_DINING',
+          type: 'EXPENSE', date: daysAgo(30 + i),
+        },
+      });
+    }
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 90, description: 'nice dinner', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: daysAgo(1),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'UNUSUAL_ACTIVITY' } });
+    expect(insights).toHaveLength(0);
+  });
+});

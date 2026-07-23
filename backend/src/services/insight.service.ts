@@ -206,12 +206,46 @@ async function checkGoalProgress(userId: string): Promise<InsightCandidate[]> {
   return candidates;
 }
 
+async function checkUnusualActivity(userId: string): Promise<InsightCandidate[]> {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const recentExpenses = await prisma.transaction.findMany({
+    where: { userId, type: 'EXPENSE', date: { gte: sevenDaysAgo } },
+  });
+
+  const candidates: InsightCandidate[] = [];
+
+  for (const tx of recentExpenses) {
+    const priorInCategory = await prisma.transaction.findMany({
+      where: { userId, type: 'EXPENSE', category: tx.category, id: { not: tx.id } },
+    });
+
+    if (priorInCategory.length < 5) {
+      continue;
+    }
+
+    const avg = priorInCategory.reduce((sum, t) => sum + t.amount, 0) / priorInCategory.length;
+
+    if (tx.amount > avg * 2) {
+      candidates.push({
+        type: 'UNUSUAL_ACTIVITY',
+        title: `Unusual transaction: ${tx.description}`,
+        description: `This $${tx.amount.toFixed(2)} transaction is more than double your typical $${avg.toFixed(2)} spend in ${tx.category}.`,
+        priority: 'HIGH',
+      });
+    }
+  }
+
+  return candidates;
+}
+
 export async function generateInsightsForUser(userId: string): Promise<void> {
   const results = await Promise.all([
     checkSpendingAlerts(userId),
     checkSavingsOpportunity(userId),
     checkBudgetRecommendation(userId),
     checkGoalProgress(userId),
+    checkUnusualActivity(userId),
   ]);
   const candidates = results.flat();
 
