@@ -67,8 +67,8 @@ with:
 # Postgres connection string used by Prisma. Matches docker-compose.yml at the repo root.
 # In production this is the pooled (PgBouncer) connection string; DIRECT_URL is the
 # unpooled one Prisma migrate needs. Locally there's no pooler, so both are identical.
-DATABASE_URL="postgresql://financeflow:financeflow@localhost:5432/financeflow?schema=public"
-DIRECT_URL="postgresql://financeflow:financeflow@localhost:5432/financeflow?schema=public"
+DATABASE_URL="postgresql://financeflow:financeflow@localhost:5433/financeflow?schema=public"
+DIRECT_URL="postgresql://financeflow:financeflow@localhost:5433/financeflow?schema=public"
 ```
 
 In `backend/.env.test.example`, replace:
@@ -80,8 +80,8 @@ DATABASE_URL="postgresql://financeflow:financeflow@localhost:5432/financeflow_te
 with:
 
 ```
-DATABASE_URL="postgresql://financeflow:financeflow@localhost:5432/financeflow_test?schema=public"
-DIRECT_URL="postgresql://financeflow:financeflow@localhost:5432/financeflow_test?schema=public"
+DATABASE_URL="postgresql://financeflow:financeflow@localhost:5433/financeflow_test?schema=public"
+DIRECT_URL="postgresql://financeflow:financeflow@localhost:5433/financeflow_test?schema=public"
 ```
 
 - [ ] **Step 3: Set `DIRECT_URL` in your local (gitignored) env files**

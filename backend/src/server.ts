@@ -18,11 +18,22 @@ app.use(helmet());
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || config.corsOrigins.includes(origin) || /\.vercel\.app$/.test(new URL(origin).hostname)) {
+    if (!origin || config.corsOrigins.includes(origin)) {
       callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+      return;
     }
+
+    try {
+      if (/\.vercel\.app$/.test(new URL(origin).hostname)) {
+        callback(null, true);
+        return;
+      }
+    } catch (err) {
+      callback(err as Error);
+      return;
+    }
+
+    callback(new Error('Not allowed by CORS'));
   },
 }));
 
