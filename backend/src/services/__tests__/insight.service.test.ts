@@ -247,3 +247,34 @@ describe('generateInsightsForUser - SAVINGS_OPPORTUNITY', () => {
     expect(insights).toHaveLength(0);
   });
 });
+
+describe('generateInsightsForUser - BUDGET_RECOMMENDATION', () => {
+  it('creates an insight when expenses reach at least 90% of income', async () => {
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 1000, description: 'salary', category: 'INCOME_SALARY', type: 'INCOME', date: thisMonthDate() },
+    });
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 950, description: 'bills', category: 'BILLS_UTILITIES', type: 'EXPENSE', date: thisMonthDate() },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'BUDGET_RECOMMENDATION' } });
+    expect(insights).toHaveLength(1);
+    expect(insights[0].priority).toBe('MEDIUM');
+  });
+
+  it('does not create an insight when expenses are below 90% of income', async () => {
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 1000, description: 'salary', category: 'INCOME_SALARY', type: 'INCOME', date: thisMonthDate() },
+    });
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 800, description: 'bills', category: 'BILLS_UTILITIES', type: 'EXPENSE', date: thisMonthDate() },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'BUDGET_RECOMMENDATION' } });
+    expect(insights).toHaveLength(0);
+  });
+});

@@ -144,10 +144,35 @@ async function checkSavingsOpportunity(userId: string): Promise<InsightCandidate
   return [];
 }
 
+async function checkBudgetRecommendation(userId: string): Promise<InsightCandidate[]> {
+  const thisMonthStart = startOfMonth(new Date(), 0);
+
+  const [expenses, incomes] = await Promise.all([
+    prisma.transaction.findMany({ where: { userId, type: 'EXPENSE', date: { gte: thisMonthStart } } }),
+    prisma.transaction.findMany({ where: { userId, type: 'INCOME', date: { gte: thisMonthStart } } }),
+  ]);
+
+  const expenseTotal = expenses.reduce((sum, t) => sum + t.amount, 0);
+  const incomeTotal = incomes.reduce((sum, t) => sum + t.amount, 0);
+
+  if (incomeTotal > 0 && expenseTotal >= incomeTotal * 0.9) {
+    const pct = Math.round((expenseTotal / incomeTotal) * 100);
+    return [{
+      type: 'BUDGET_RECOMMENDATION',
+      title: 'Consider a budget using the 50/30/20 rule',
+      description: `You've spent ${pct}% of your income this month. A common guideline is 50% needs, 30% wants, 20% savings.`,
+      priority: 'MEDIUM',
+    }];
+  }
+
+  return [];
+}
+
 export async function generateInsightsForUser(userId: string): Promise<void> {
   const results = await Promise.all([
     checkSpendingAlerts(userId),
     checkSavingsOpportunity(userId),
+    checkBudgetRecommendation(userId),
   ]);
   const candidates = results.flat();
 
