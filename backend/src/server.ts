@@ -17,7 +17,26 @@ const app = express();
 
 app.use(helmet());
 
-app.use(cors({ origin: config.corsOrigins }));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || config.corsOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    try {
+      if (/\.vercel\.app$/.test(new URL(origin).hostname)) {
+        callback(null, true);
+        return;
+      }
+    } catch (err) {
+      callback(err as Error);
+      return;
+    }
+
+    callback(new Error('Not allowed by CORS'));
+  },
+}));
 
 app.use(morgan('combined'));
 
