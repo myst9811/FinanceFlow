@@ -5,7 +5,7 @@ import {
   ArrowTrendingDownIcon,
   WalletIcon
 } from '@heroicons/react/24/outline';
-import StatCard from '../components/dashboard/StatCard';
+import StatCard from '../components/common/StatCard';
 import RecentTransactions from '../components/dashboard/RecentTransactions';
 import { mockTransactions } from '../data/mockData';
 import { formatCurrency } from '../utils/formatters';
