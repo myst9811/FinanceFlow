@@ -749,13 +749,16 @@ const Header = () => {
   const handleNotificationClick = async (insight: Insight) => {
     if (insight.isRead) return;
 
+    setInsights((prev) =>
+      prev.map((i) => (i.id === insight.id ? { ...i, isRead: true } : i))
+    );
+
     try {
       await insightService.markInsightRead(insight.id);
-      setInsights((prev) =>
-        prev.map((i) => (i.id === insight.id ? { ...i, isRead: true } : i))
-      );
     } catch {
-      // leave local state unchanged if the request fails
+      setInsights((prev) =>
+        prev.map((i) => (i.id === insight.id ? { ...i, isRead: false } : i))
+      );
     }
   };
 
@@ -806,6 +809,7 @@ const Header = () => {
             <div className="relative">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
+                aria-label="Notifications"
                 className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition relative"
               >
                 <BellIcon className="h-6 w-6" />
@@ -827,16 +831,17 @@ const Header = () => {
                       <p className="px-4 py-3 text-sm text-gray-500">No notifications yet.</p>
                     )}
                     {insights.map((insight) => (
-                      <div
+                      <button
                         key={insight.id}
+                        type="button"
                         onClick={() => handleNotificationClick(insight)}
-                        className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition ${
+                        className={`block w-full px-4 py-3 text-left hover:bg-gray-50 cursor-pointer transition ${
                           !insight.isRead ? 'bg-indigo-50' : ''
                         }`}
                       >
                         <p className="text-sm text-gray-900">{insight.title}</p>
                         <p className="text-xs text-gray-500 mt-1">{formatRelativeTime(insight.createdAt)}</p>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>

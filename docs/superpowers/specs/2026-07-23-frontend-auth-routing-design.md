@@ -57,7 +57,7 @@ Neither Login nor Register uses `Layout` (no sidebar/header before a user is aut
 
 `navigation` array in `Sidebar.tsx` trimmed to:
 
-```
+```text
 Dashboard    /            HomeIcon
 Accounts     /accounts    BanknotesIcon
 Transactions /transactions CreditCardIcon
