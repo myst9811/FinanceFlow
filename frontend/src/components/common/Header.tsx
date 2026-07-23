@@ -6,19 +6,44 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronDownIcon
 } from '@heroicons/react/24/outline';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import insightService from '../../services/insight.service';
+import { Insight } from '../../types/api.types';
 
 const Header = () => {
+  const { user, logout } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [insights, setInsights] = useState<Insight[]>([]);
 
-  const notifications = [
-    { id: 1, text: 'Payment received: $1,250.00', time: '5m ago', unread: true },
-    { id: 2, text: 'Budget alert: Groceries 80% spent', time: '1h ago', unread: true },
-    { id: 3, text: 'Subscription renewed: Netflix', time: '3h ago', unread: false },
-  ];
+  useEffect(() => {
+    insightService.getInsights().then(setInsights).catch(() => setInsights([]));
+  }, []);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const unreadCount = insights.filter((i) => !i.isRead).length;
+
+  const handleNotificationClick = async (insight: Insight) => {
+    if (insight.isRead) return;
+
+    try {
+      await insightService.markInsightRead(insight.id);
+      setInsights((prev) =>
+        prev.map((i) => (i.id === insight.id ? { ...i, isRead: true } : i))
+      );
+    } catch {
+      // leave local state unchanged if the request fails
+    }
+  };
+
+  const formatRelativeTime = (createdAt: string) => {
+    const diffMs = Date.now() - new Date(createdAt).getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.round(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${Math.round(diffHours / 24)}d ago`;
+  };
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
@@ -75,22 +100,21 @@ const Header = () => {
                     <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
                   </div>
                   <div className="max-h-96 overflow-y-auto">
-                    {notifications.map((notification) => (
+                    {insights.length === 0 && (
+                      <p className="px-4 py-3 text-sm text-gray-500">No notifications yet.</p>
+                    )}
+                    {insights.map((insight) => (
                       <div
-                        key={notification.id}
+                        key={insight.id}
+                        onClick={() => handleNotificationClick(insight)}
                         className={`px-4 py-3 hover:bg-gray-50 cursor-pointer transition ${
-                          notification.unread ? 'bg-indigo-50' : ''
+                          !insight.isRead ? 'bg-indigo-50' : ''
                         }`}
                       >
-                        <p className="text-sm text-gray-900">{notification.text}</p>
-                        <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                        <p className="text-sm text-gray-900">{insight.title}</p>
+                        <p className="text-xs text-gray-500 mt-1">{formatRelativeTime(insight.createdAt)}</p>
                       </div>
                     ))}
-                  </div>
-                  <div className="px-4 py-2 border-t border-gray-200">
-                    <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-                      View all notifications
-                    </button>
                   </div>
                 </div>
               )}
@@ -103,11 +127,16 @@ const Header = () => {
                 className="flex items-center space-x-3 p-2 hover:bg-gray-100 rounded-lg transition"
               >
                 <div className="hidden md:block text-right">
-                  <p className="text-sm font-medium text-gray-900">John Doe</p>
-                  <p className="text-xs text-gray-500">john@example.com</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {user?.firstName} {user?.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
                 </div>
                 <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-medium text-sm">JD</span>
+                  <span className="text-white font-medium text-sm">
+                    {user?.firstName?.[0]}
+                    {user?.lastName?.[0]}
+                  </span>
                 </div>
                 <ChevronDownIcon className="h-4 w-4 text-gray-500 hidden md:block" />
               </button>
@@ -116,8 +145,10 @@ const Header = () => {
               {showProfileMenu && (
                 <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
                   <div className="px-4 py-3 border-b border-gray-200">
-                    <p className="text-sm font-medium text-gray-900">John Doe</p>
-                    <p className="text-xs text-gray-500">john@example.com</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      {user?.firstName} {user?.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
                   </div>
                   <div className="py-1">
                     <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-3 transition">
@@ -130,7 +161,10 @@ const Header = () => {
                     </button>
                   </div>
                   <div className="border-t border-gray-200 py-1">
-                    <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-3 transition">
+                    <button
+                      onClick={logout}
+                      className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-3 transition"
+                    >
                       <ArrowRightOnRectangleIcon className="h-5 w-5 text-red-500" />
                       <span>Sign Out</span>
                     </button>
