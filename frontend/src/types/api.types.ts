@@ -223,6 +223,33 @@ export interface GoalSummary {
   urgentGoals: Goal[];
 }
 
+// Insight Types
+export enum InsightType {
+  SPENDING_ALERT = 'SPENDING_ALERT',
+  SAVINGS_OPPORTUNITY = 'SAVINGS_OPPORTUNITY',
+  BUDGET_RECOMMENDATION = 'BUDGET_RECOMMENDATION',
+  GOAL_PROGRESS = 'GOAL_PROGRESS',
+  UNUSUAL_ACTIVITY = 'UNUSUAL_ACTIVITY',
+}
+
+export enum Priority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
+
+export interface Insight {
+  id: string;
+  userId: string;
+  type: InsightType;
+  title: string;
+  description: string;
+  priority: Priority;
+  isRead: boolean;
+  createdAt: string;
+}
+
 // API Response Wrappers
 export interface ApiResponse<T> {
   data: T;
