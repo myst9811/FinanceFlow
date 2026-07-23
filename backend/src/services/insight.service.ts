@@ -9,6 +9,8 @@ interface InsightFilters {
 }
 
 export async function getInsightsForUser(userId: string, filters: InsightFilters) {
+  await generateInsightsForUser(userId);
+
   const where: any = { userId };
 
   if (filters.isRead !== undefined) {
@@ -25,6 +27,8 @@ export async function getInsightsForUser(userId: string, filters: InsightFilters
 }
 
 export async function getInsightsSummaryForUser(userId: string) {
+  await generateInsightsForUser(userId);
+
   const insights = await prisma.insight.findMany({ where: { userId } });
 
   const byPriority: Record<string, number> = {};
@@ -250,6 +254,12 @@ export async function generateInsightsForUser(userId: string): Promise<void> {
   const candidates = results.flat();
 
   for (const candidate of candidates) {
-    await prisma.insight.create({ data: { userId, ...candidate } });
+    const existingUnread = await prisma.insight.findFirst({
+      where: { userId, type: candidate.type, title: candidate.title, isRead: false },
+    });
+
+    if (!existingUnread) {
+      await prisma.insight.create({ data: { userId, ...candidate } });
+    }
   }
 }

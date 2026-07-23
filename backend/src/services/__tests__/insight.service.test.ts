@@ -401,3 +401,51 @@ describe('generateInsightsForUser - UNUSUAL_ACTIVITY', () => {
     expect(insights).toHaveLength(0);
   });
 });
+
+describe('generateInsightsForUser - dedup', () => {
+  it('does not create a duplicate insight for the same still-true condition', async () => {
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 100, description: 'groceries', category: 'FOOD_DINING', type: 'EXPENSE', date: lastMonthDate() },
+    });
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 200, description: 'groceries', category: 'FOOD_DINING', type: 'EXPENSE', date: thisMonthDate() },
+    });
+
+    await generateInsightsForUser(userId);
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'SPENDING_ALERT' } });
+    expect(insights).toHaveLength(1);
+  });
+
+  it('creates a new insight once the previous one has been marked read', async () => {
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 100, description: 'groceries', category: 'FOOD_DINING', type: 'EXPENSE', date: lastMonthDate() },
+    });
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 200, description: 'groceries', category: 'FOOD_DINING', type: 'EXPENSE', date: thisMonthDate() },
+    });
+
+    await generateInsightsForUser(userId);
+    await prisma.insight.updateMany({ where: { userId, type: 'SPENDING_ALERT' }, data: { isRead: true } });
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'SPENDING_ALERT' } });
+    expect(insights).toHaveLength(2);
+  });
+});
+
+describe('getInsightsForUser - generation on read', () => {
+  it('generates and returns newly detected insights', async () => {
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 100, description: 'groceries', category: 'FOOD_DINING', type: 'EXPENSE', date: lastMonthDate() },
+    });
+    await prisma.transaction.create({
+      data: { userId, accountId, amount: 200, description: 'groceries', category: 'FOOD_DINING', type: 'EXPENSE', date: thisMonthDate() },
+    });
+
+    const insights = await getInsightsForUser(userId, {});
+
+    expect(insights.some((i) => i.type === 'SPENDING_ALERT')).toBe(true);
+  });
+});
