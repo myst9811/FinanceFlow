@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import accountRoutes from './routes/account.routes';
 import transactionRoutes from './routes/transaction.routes';
 import goalRoutes from './routes/goal.routes';
+import insightRoutes from './routes/insight.routes';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware';
 
 const app = express();
@@ -42,8 +43,7 @@ app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/goals', goalRoutes);
 
-// TODO: Implement remaining routes
-// app.use('/api/insights', insightRoutes);
+app.use('/api/insights', insightRoutes);
 
   
 
