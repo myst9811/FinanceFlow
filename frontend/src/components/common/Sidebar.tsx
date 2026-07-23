@@ -1,21 +1,20 @@
 import React, { useState } from 'react';
 import {
   HomeIcon,
+  BanknotesIcon,
   CreditCardIcon,
-  ChartBarIcon,
   FlagIcon,
-  CogIcon,
   Bars3Icon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import { NavLink } from 'react-router-dom';
 import type { NavigationItem } from '../../types';
 
 const navigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/', icon: HomeIcon },
+  { name: 'Accounts', href: '/accounts', icon: BanknotesIcon },
   { name: 'Transactions', href: '/transactions', icon: CreditCardIcon },
-  { name: 'Analytics', href: '/analytics', icon: ChartBarIcon },
   { name: 'Goals', href: '/goals', icon: FlagIcon },
-  { name: 'Settings', href: '/settings', icon: CogIcon },
 ];
 
 const Sidebar: React.FC = () => {
@@ -49,15 +48,22 @@ const Sidebar: React.FC = () => {
         </div>
         <nav className="mt-6">
           {navigation.map((item) => (
-            <a
+            <NavLink
               key={item.name}
-              href={item.href}
-              className="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-50 hover:text-primary-600 transition-colors"
+              to={item.href}
+              end={item.href === '/'}
+              className={({ isActive }) =>
+                `flex items-center px-6 py-3 transition-colors ${
+                  isActive
+                    ? 'bg-primary-50 text-primary-600'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
+                }`
+              }
               onClick={() => setIsOpen(false)}
             >
               <item.icon className="h-5 w-5 mr-3" />
               {item.name}
-            </a>
+            </NavLink>
           ))}
         </nav>
       </div>
