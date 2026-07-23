@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { ApiError } from '../utils/ApiError';
-import { InsightType, Priority } from '../generated/prisma';
+import { InsightType, Priority, TransactionCategory } from '../generated/prisma';
 
 interface InsightFilters {
   isRead?: boolean;
@@ -61,4 +61,63 @@ export async function deleteInsightForUser(userId: string, id: string) {
   }
 
   await prisma.insight.delete({ where: { id } });
+}
+
+interface InsightCandidate {
+  type: InsightType;
+  title: string;
+  description: string;
+  priority: Priority;
+}
+
+function startOfMonth(date: Date, monthsAgo = 0): Date {
+  return new Date(date.getFullYear(), date.getMonth() - monthsAgo, 1);
+}
+
+async function checkSpendingAlerts(userId: string): Promise<InsightCandidate[]> {
+  const now = new Date();
+  const thisMonthStart = startOfMonth(now, 0);
+  const lastMonthStart = startOfMonth(now, 1);
+
+  const transactions = await prisma.transaction.findMany({
+    where: { userId, type: 'EXPENSE', date: { gte: lastMonthStart } },
+  });
+
+  const thisMonthByCategory: Record<string, number> = {};
+  const lastMonthByCategory: Record<string, number> = {};
+
+  for (const t of transactions) {
+    if (t.date >= thisMonthStart) {
+      thisMonthByCategory[t.category] = (thisMonthByCategory[t.category] || 0) + t.amount;
+    } else {
+      lastMonthByCategory[t.category] = (lastMonthByCategory[t.category] || 0) + t.amount;
+    }
+  }
+
+  const candidates: InsightCandidate[] = [];
+
+  for (const category of Object.keys(lastMonthByCategory)) {
+    const lastMonthTotal = lastMonthByCategory[category];
+    const thisMonthTotal = thisMonthByCategory[category] || 0;
+
+    if (lastMonthTotal > 0 && thisMonthTotal >= lastMonthTotal * 1.2) {
+      const pct = Math.round(((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100);
+      candidates.push({
+        type: 'SPENDING_ALERT',
+        title: `Spending up in ${category}`,
+        description: `You've spent $${thisMonthTotal.toFixed(2)} this month vs $${lastMonthTotal.toFixed(2)} last month in ${category}, a ${pct}% increase.`,
+        priority: pct > 50 ? 'HIGH' : 'MEDIUM',
+      });
+    }
+  }
+
+  return candidates;
+}
+
+export async function generateInsightsForUser(userId: string): Promise<void> {
+  const candidates = await checkSpendingAlerts(userId);
+
+  for (const candidate of candidates) {
+    await prisma.insight.create({ data: { userId, ...candidate } });
+  }
 }

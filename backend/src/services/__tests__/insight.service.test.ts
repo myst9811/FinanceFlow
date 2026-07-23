@@ -6,10 +6,21 @@ import {
   getInsightsSummaryForUser,
   markInsightReadForUser,
   deleteInsightForUser,
+  generateInsightsForUser,
 } from '../insight.service';
 
 let userId: string;
 let accountId: string;
+
+function thisMonthDate(day = 10): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), day);
+}
+
+function lastMonthDate(day = 10): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() - 1, day);
+}
 
 beforeEach(async () => {
   const user = await prisma.user.create({
@@ -126,5 +137,82 @@ describe('deleteInsightForUser', () => {
     await expect(
       deleteInsightForUser('00000000-0000-0000-0000-000000000000', insight.id)
     ).rejects.toMatchObject(new ApiError(404, 'Insight not found'));
+  });
+});
+
+describe('generateInsightsForUser - SPENDING_ALERT', () => {
+  it('creates a MEDIUM priority alert when spending is up 20-50%', async () => {
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 100, description: 'groceries', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: lastMonthDate(),
+      },
+    });
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 130, description: 'groceries', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: thisMonthDate(),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'SPENDING_ALERT' } });
+    expect(insights).toHaveLength(1);
+    expect(insights[0]).toMatchObject({ title: 'Spending up in FOOD_DINING', priority: 'MEDIUM' });
+  });
+
+  it('creates a HIGH priority alert when spending is up more than 50%', async () => {
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 100, description: 'groceries', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: lastMonthDate(),
+      },
+    });
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 200, description: 'groceries', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: thisMonthDate(),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'SPENDING_ALERT' } });
+    expect(insights[0].priority).toBe('HIGH');
+  });
+
+  it('does not create an alert when the increase is below 20%', async () => {
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 100, description: 'groceries', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: lastMonthDate(),
+      },
+    });
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 110, description: 'groceries', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: thisMonthDate(),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'SPENDING_ALERT' } });
+    expect(insights).toHaveLength(0);
+  });
+
+  it('does not create an alert without a prior-month baseline', async () => {
+    await prisma.transaction.create({
+      data: {
+        userId, accountId, amount: 500, description: 'groceries', category: 'FOOD_DINING',
+        type: 'EXPENSE', date: thisMonthDate(),
+      },
+    });
+
+    await generateInsightsForUser(userId);
+
+    const insights = await prisma.insight.findMany({ where: { userId, type: 'SPENDING_ALERT' } });
+    expect(insights).toHaveLength(0);
   });
 });
