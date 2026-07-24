@@ -198,6 +198,9 @@ const TransactionForm = ({ accounts, initialValues, onSubmit, onCancel, submitti
           onChange={(e) => setAmount(e.target.value)}
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
         />
+        <p className="mt-1 text-xs text-gray-500">
+          Always a positive number — the Type above determines whether it's added to or subtracted from the account balance.
+        </p>
       </div>
 
       {type === TransactionType.TRANSFER ? (
