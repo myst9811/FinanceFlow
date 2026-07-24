@@ -108,6 +108,7 @@ export interface AccountSummary {
 // Transaction Types
 export interface CreateTransactionRequest {
   accountId: string;
+  toAccountId?: string;
   amount: number;
   description: string;
   category: TransactionCategory;
@@ -128,6 +129,7 @@ export interface Transaction {
   id: string;
   userId: string;
   accountId: string;
+  toAccountId?: string | null;
   amount: number;
   description: string;
   category: TransactionCategory;
@@ -136,6 +138,8 @@ export interface Transaction {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  account: { name: string; type: AccountType };
+  toAccount?: { name: string; type: AccountType } | null;
 }
 
 export interface TransactionFilters {
@@ -150,15 +154,11 @@ export interface TransactionFilters {
 }
 
 export interface TransactionStats {
+  totalTransactions: number;
   totalIncome: number;
   totalExpenses: number;
   netIncome: number;
-  transactionCount: number;
-  byCategory: {
-    category: TransactionCategory;
-    total: number;
-    count: number;
-  }[];
+  byCategory: Record<string, number>;
   recentTransactions: Transaction[];
 }
 
