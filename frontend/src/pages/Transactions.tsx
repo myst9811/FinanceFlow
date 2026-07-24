@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import TransactionForm from '../components/transactions/TransactionForm';
 import TransactionRow from '../components/transactions/TransactionRow';
 import transactionService from '../services/transaction.service';
@@ -21,8 +21,10 @@ const Transactions = () => {
   const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const requestIdRef = useRef(0);
 
   const loadAll = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     setError(null);
     try {
       const [accountsData, transactionsData] = await Promise.all([
@@ -32,16 +34,22 @@ const Transactions = () => {
           type: (typeFilter || undefined) as TransactionType | undefined,
         }),
       ]);
+      if (requestIdRef.current !== requestId) return;
       setAccounts(accountsData);
       setTransactions(transactionsData);
     } catch {
+      if (requestIdRef.current !== requestId) return;
       setError('Failed to load transactions. Please try again.');
+    } finally {
+      if (requestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, [accountFilter, typeFilter]);
 
   useEffect(() => {
     setLoading(true);
-    loadAll().finally(() => setLoading(false));
+    loadAll();
   }, [loadAll]);
 
   const handleCreate = () => {
@@ -89,7 +97,7 @@ const Transactions = () => {
         <button
           onClick={() => {
             setLoading(true);
-            loadAll().finally(() => setLoading(false));
+            loadAll();
           }}
           className="btn-secondary"
         >
@@ -149,6 +157,7 @@ const Transactions = () => {
 
       {formMode && (
         <TransactionForm
+          key={formMode === 'edit' ? editingTransaction?.id : 'create'}
           accounts={accounts}
           initialValues={formMode === 'edit' ? editingTransaction ?? undefined : undefined}
           onSubmit={handleSubmit}
