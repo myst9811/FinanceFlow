@@ -7,6 +7,7 @@ import {
 } from '../types/goal.types';
 import { validateGoalInput, validateGoalUpdate } from '../utils/validation';
 import { ApiError } from '../utils/ApiError';
+import { incrementGoalAmount } from '../services/goal.service';
 
 // Helper function to calculate goal progress metrics
 const calculateGoalMetrics = (goal: any) => {
@@ -38,7 +39,7 @@ export const createGoal = async (
   const { title, description, targetAmount, currentAmount, targetDate, category }: CreateGoalRequest = req.body;
 
   // Validate input
-  const validation = validateGoalInput(title, targetAmount, targetDate, category);
+  const validation = validateGoalInput(title, targetAmount, targetDate, category, currentAmount);
   if (!validation.valid) {
     throw new ApiError(400, validation.error!);
   }
@@ -201,13 +202,9 @@ export const addContribution = async (
     throw new ApiError(404, 'Goal not found');
   }
 
-  // Add to current amount
-  const goal = await prisma.goal.update({
-    where: { id },
-    data: {
-      currentAmount: existingGoal.currentAmount + amount,
-    },
-  });
+  // Add to current amount atomically (avoids a lost update if two
+  // contributions to the same goal happen concurrently)
+  const goal = await incrementGoalAmount(id, amount);
 
   const goalWithMetrics = calculateGoalMetrics(goal);
 
@@ -268,8 +265,11 @@ export const getGoalsSummary = async (
   const totalGoals = goals.length;
   const totalTargetAmount = goals.reduce((sum, goal) => sum + goal.targetAmount, 0);
   const totalCurrentAmount = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
-  const totalRemainingAmount = totalTargetAmount - totalCurrentAmount;
-  const overallProgress = totalTargetAmount > 0 ? (totalCurrentAmount / totalTargetAmount) * 100 : 0;
+  const totalRemainingAmount = goals.reduce(
+    (sum, goal) => sum + Math.max(0, goal.targetAmount - goal.currentAmount),
+    0
+  );
+  const overallProgress = totalTargetAmount > 0 ? Math.min(100, (totalCurrentAmount / totalTargetAmount) * 100) : 0;
 
   // Count completed goals (100% or more progress)
   const completedGoals = goals.filter(goal => goal.currentAmount >= goal.targetAmount).length;
