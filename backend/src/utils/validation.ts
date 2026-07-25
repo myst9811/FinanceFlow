@@ -226,7 +226,8 @@ export const validateGoalInput = (
   title: string,
   targetAmount: number,
   targetDate: string,
-  category: string
+  category: string,
+  currentAmount?: number
 ): { valid: boolean; error?: string } => {
   if (!title || !targetDate || !category) {
     return { valid: false, error: 'Title, target amount, target date, and category are required' };
@@ -238,6 +239,10 @@ export const validateGoalInput = (
 
   if (isNaN(targetAmount) || targetAmount <= 0) {
     return { valid: false, error: 'Target amount must be a positive number' };
+  }
+
+  if (currentAmount !== undefined && (isNaN(currentAmount) || currentAmount < 0)) {
+    return { valid: false, error: 'Current amount must be a non-negative number' };
   }
 
   if (!validGoalCategories.includes(category)) {

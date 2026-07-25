@@ -167,6 +167,7 @@ export interface CreateGoalRequest {
   title: string;
   description?: string;
   targetAmount: number;
+  currentAmount?: number;
   targetDate: string;
   category: GoalCategory;
 }
@@ -175,8 +176,9 @@ export interface UpdateGoalRequest {
   title?: string;
   description?: string;
   targetAmount?: number;
+  currentAmount?: number;
   targetDate?: string;
-  category?: GoalCategory;
+  isActive?: boolean;
 }
 
 export interface Goal {
@@ -203,16 +205,12 @@ export interface GoalContribution {
 export interface GoalSummary {
   totalGoals: number;
   activeGoals: number;
+  completedGoals: number;
   totalTargetAmount: number;
   totalCurrentAmount: number;
+  totalRemainingAmount: number;
   overallProgress: number;
-  byCategory: {
-    category: GoalCategory;
-    count: number;
-    totalTarget: number;
-    totalCurrent: number;
-    progress: number;
-  }[];
+  byCategory: Record<string, { count: number; targetAmount: number; currentAmount: number }>;
   urgentGoals: Goal[];
 }
 
