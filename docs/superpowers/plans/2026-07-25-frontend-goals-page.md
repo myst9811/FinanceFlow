@@ -2,22 +2,24 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the `Goals.tsx` "Coming soon" placeholder with a full CRUD page (create/list/edit/delete goals, plus a dedicated contribute action), fixing three small pre-existing backend bugs and the `CreateGoalRequest`/`UpdateGoalRequest`/`GoalSummary` type mismatches that the design review surfaced.
+**Goal:** Replace the `Goals.tsx` "Coming soon" placeholder with a full CRUD page (create/list/edit/delete goals, plus a dedicated contribute action), fixing four small pre-existing backend bugs and the `CreateGoalRequest`/`UpdateGoalRequest`/`GoalSummary` type mismatches that the design review surfaced.
 
-**Architecture:** Three small backend fixes in already-merged `goal.controller.ts`/`validation.ts` (missing `currentAmount` validation, a lost-update race in the contribute endpoint, an unclamped aggregate). New `goal.service.ts` (mirrors `account.service.ts`/`transaction.service.ts`). `GoalForm` for create/edit; a separate inline "Add Funds" control inside `GoalCard` for contributions, since the backend's additive contribute endpoint is a different operation from the direct-overwrite update endpoint.
+**Architecture:** Backend fixes in already-merged `goal.controller.ts`/`validation.ts` (missing `currentAmount` validation, a lost-update race in the contribute endpoint fixed via a small extracted `backend/src/services/goal.service.ts`, and incorrect remaining/progress aggregate math). New `frontend/src/services/goal.service.ts` (mirrors `account.service.ts`/`transaction.service.ts`). `GoalForm` for create/edit; a separate inline "Add Funds" control inside `GoalCard` for contributions, since the backend's additive contribute endpoint is a different operation from the direct-overwrite update endpoint. On the page, mutation success is decoupled from the follow-up list refresh: a successful create/edit/delete/contribute always closes its form/collapses its control immediately, and a refresh failure afterward shows a small non-blocking notice rather than replacing the whole page with a blocking error screen.
 
-**Tech Stack:** React 19, Express/Prisma (backend fixes), existing Tailwind utility classes, axios (`apiClient`), no new dependencies.
+**Tech Stack:** React 19, Express/Prisma (backend fixes), existing Tailwind utility classes, axios (`apiClient`), no new frontend dependencies.
 
 **Spec:** `docs/superpowers/specs/2026-07-24-frontend-goals-page-design.md`
 
-**Note on testing:** the three backend fixes are small, targeted changes to functions that live directly in `goal.controller.ts` (not a separate service file, unlike transactions) — this backend has no controller-level test harness (existing backend tests only cover extracted service-layer functions in `transaction.service.ts`/`insight.service.ts`). Adding one now, for three small fixes, would mean standing up a new testing pattern (supertest against Express routes) disproportionate to the change. Verification is manual/curl-based instead (Task 7), consistent with the frontend side's existing precedent from 4a/4b.
+**Note on testing:** most of the backend fixes are small validation/math changes verified manually alongside the frontend (Task 7), consistent with the frontend side's existing precedent from 4a/4b. The one exception is the contribution race fix (Task 1): a manual "fire two curl calls in the background" check can't reliably prove a concurrency bug is fixed, since the two requests aren't guaranteed to actually overlap. That fix gets a real automated test — which requires extracting the increment into an exported function first, since the existing backend test convention (`transaction.service.test.ts`/`insight.service.test.ts`) only tests extracted service-layer functions directly against the test database, never controllers via HTTP.
 
 ---
 
 ## File Structure
 
 - Modify: `backend/src/utils/validation.ts` — add `currentAmount` param/check to `validateGoalInput`
-- Modify: `backend/src/controllers/goal.controller.ts` — pass `currentAmount` to validation, atomic `increment` in `addContribution`, clamp `totalRemainingAmount`
+- Modify: `backend/src/controllers/goal.controller.ts` — pass `currentAmount` to validation, call the new atomic increment service, fix remaining/progress aggregate math
+- Create: `backend/src/services/goal.service.ts` — `incrementGoalAmount`, the one piece of goal logic worth extracting for testability
+- Create: `backend/src/services/__tests__/goal.service.test.ts` — concurrency test for the atomic increment
 - Modify: `frontend/src/types/api.types.ts` — fix `CreateGoalRequest`, `UpdateGoalRequest`, `GoalSummary`
 - Create: `frontend/src/services/goal.service.ts`
 - Create: `frontend/src/components/goals/GoalForm.tsx`
@@ -31,6 +33,8 @@
 **Files:**
 - Modify: `backend/src/utils/validation.ts`
 - Modify: `backend/src/controllers/goal.controller.ts`
+- Create: `backend/src/services/goal.service.ts`
+- Create: `backend/src/services/__tests__/goal.service.test.ts`
 
 - [ ] **Step 1: Add `currentAmount` validation to `validateGoalInput`**
 
@@ -105,9 +109,36 @@ with:
   const validation = validateGoalInput(title, targetAmount, targetDate, category, currentAmount);
 ```
 
-- [ ] **Step 3: Fix the lost-update race in `addContribution`**
+- [ ] **Step 3: Extract the contribution increment into a testable, atomic service function**
 
-In `backend/src/controllers/goal.controller.ts`, replace:
+A manual curl-based "fire two requests in the background" check can't reliably prove a race is fixed — the two requests aren't guaranteed to actually overlap, so the old buggy code could pass it by accident. Proving this needs a real concurrent call against the test database, which means the increment logic needs to be an exported function, not inline in the controller.
+
+Create `backend/src/services/goal.service.ts`:
+
+```typescript
+import { prisma } from '../lib/prisma';
+
+// Atomically increments a goal's currentAmount. Using Prisma's increment
+// operator (rather than reading the current value and writing back the
+// sum) avoids a lost update when two contributions to the same goal
+// happen concurrently.
+export async function incrementGoalAmount(id: string, amount: number) {
+  return prisma.goal.update({
+    where: { id },
+    data: { currentAmount: { increment: amount } },
+  });
+}
+```
+
+- [ ] **Step 4: Use it from `addContribution`**
+
+In `backend/src/controllers/goal.controller.ts`, add the import alongside the other imports:
+
+```typescript
+import { incrementGoalAmount } from '../services/goal.service';
+```
+
+Replace:
 
 ```typescript
   // Add to current amount
@@ -124,15 +155,68 @@ with:
 ```typescript
   // Add to current amount atomically (avoids a lost update if two
   // contributions to the same goal happen concurrently)
-  const goal = await prisma.goal.update({
-    where: { id },
-    data: {
-      currentAmount: { increment: amount },
-    },
-  });
+  const goal = await incrementGoalAmount(id, amount);
 ```
 
-- [ ] **Step 4: Clamp `totalRemainingAmount` in `getGoalsSummary`**
+- [ ] **Step 5: Write a test that actually forces two contributions to overlap**
+
+Create `backend/src/services/__tests__/goal.service.test.ts`:
+
+```typescript
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { prisma } from '../../lib/prisma';
+import { incrementGoalAmount } from '../goal.service';
+
+let userId: string;
+let goalId: string;
+
+beforeEach(async () => {
+  const user = await prisma.user.create({
+    data: {
+      email: `test-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`,
+      password: 'hashed',
+      firstName: 'Test',
+      lastName: 'User',
+    },
+  });
+  userId = user.id;
+
+  const goal = await prisma.goal.create({
+    data: {
+      userId,
+      title: 'Test Goal',
+      targetAmount: 1000,
+      currentAmount: 0,
+      targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      category: 'OTHER',
+    },
+  });
+  goalId = goal.id;
+});
+
+afterEach(async () => {
+  await prisma.goal.deleteMany({ where: { userId } });
+  await prisma.user.delete({ where: { id: userId } });
+});
+
+describe('incrementGoalAmount', () => {
+  it('applies both increments when called concurrently, without losing either', async () => {
+    await Promise.all([
+      incrementGoalAmount(goalId, 10),
+      incrementGoalAmount(goalId, 15),
+    ]);
+
+    const goal = await prisma.goal.findUniqueOrThrow({ where: { id: goalId } });
+    expect(goal.currentAmount).toBe(25);
+  });
+});
+```
+
+`Promise.all` fires both `incrementGoalAmount` calls essentially simultaneously against the same row — with the old read-then-write code this test would be flaky at best (frequently losing one of the two increments), and with the atomic `increment` operator it passes deterministically every time, since Postgres itself serializes the two `UPDATE ... SET "currentAmount" = "currentAmount" + $1` statements at the row level.
+
+- [ ] **Step 6: Fix `totalRemainingAmount`'s math in `getGoalsSummary`**
+
+The naive fix of just clamping the aggregate (`Math.max(0, totalTargetAmount - totalCurrentAmount)`) is wrong: if one goal is overfunded by $100 and another is $100 short, that computes to $0 remaining overall, hiding the fact that $100 is still needed for the unfinished goal. The correct aggregate is the sum of each goal's own (already-clamped) remaining amount.
 
 In `backend/src/controllers/goal.controller.ts`, replace:
 
@@ -143,24 +227,43 @@ In `backend/src/controllers/goal.controller.ts`, replace:
 with:
 
 ```typescript
-  const totalRemainingAmount = Math.max(0, totalTargetAmount - totalCurrentAmount);
+  const totalRemainingAmount = goals.reduce(
+    (sum, goal) => sum + Math.max(0, goal.targetAmount - goal.currentAmount),
+    0
+  );
 ```
 
-- [ ] **Step 5: Run the full backend test suite**
+- [ ] **Step 7: Clamp `overallProgress` the same way per-goal `progress` is already clamped**
+
+`calculateGoalMetrics` clamps each individual goal's `progress` to a maximum of 100 (`Math.min(100, ...)`), but `getGoalsSummary`'s aggregate `overallProgress` has no such clamp — a single overfunded goal can push it past 100%, which would look inconsistent next to individual goal cards that never show more than 100%.
+
+In `backend/src/controllers/goal.controller.ts`, replace:
+
+```typescript
+  const overallProgress = totalTargetAmount > 0 ? (totalCurrentAmount / totalTargetAmount) * 100 : 0;
+```
+
+with:
+
+```typescript
+  const overallProgress = totalTargetAmount > 0 ? Math.min(100, (totalCurrentAmount / totalTargetAmount) * 100) : 0;
+```
+
+- [ ] **Step 8: Run the full backend test suite**
 
 Run: `npm run test:backend`
-Expected: all 38 existing tests still pass (none of them cover goals, so this just confirms nothing else broke)
+Expected: all 38 existing tests plus the new `incrementGoalAmount` concurrency test pass (39 total)
 
-- [ ] **Step 6: Verify the backend builds**
+- [ ] **Step 9: Verify the backend builds**
 
 Run: `npm run build:backend`
 Expected: completes with no TypeScript errors
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add backend/src/utils/validation.ts backend/src/controllers/goal.controller.ts
-git commit -m "fix: validate currentAmount on goal creation, make contributions atomic, clamp remaining-amount aggregate"
+git add backend/src/utils/validation.ts backend/src/controllers/goal.controller.ts backend/src/services/goal.service.ts backend/src/services/__tests__/goal.service.test.ts
+git commit -m "fix: validate currentAmount on goal creation, make contributions atomic, fix remaining/progress aggregate math"
 ```
 
 ---
@@ -391,10 +494,19 @@ const GoalForm = ({ initialValues, onSubmit, onCancel, submitting }: GoalFormPro
     e.preventDefault();
     setError(null);
 
+    // Edit and create diverge here on purpose: in edit mode, description
+    // must always be sent as-is (including '' ) so clearing it actually
+    // clears the stored value -- the backend only updates description
+    // when the key is present at all, and treats '' as "set it to null".
+    // Sending `undefined` for an empty description would omit the key
+    // entirely and silently leave the old description in place. Create
+    // mode has no existing value to preserve, so omitting an empty one
+    // there is harmless and matches AccountForm's precedent for optional
+    // text fields.
     const payload = isEditing
       ? {
           title,
-          description: description || undefined,
+          description,
           targetAmount: Number(targetAmount),
           targetDate,
         }
@@ -564,6 +676,7 @@ interface GoalCardProps {
   onEdit: (goal: Goal) => void;
   onDelete: (goal: Goal) => void;
   onContribute: (goal: Goal, amount: number) => Promise<void>;
+  deleting: boolean;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -576,7 +689,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: 'Other',
 };
 
-const GoalCard = ({ goal, onEdit, onDelete, onContribute }: GoalCardProps) => {
+const GoalCard = ({ goal, onEdit, onDelete, onContribute, deleting }: GoalCardProps) => {
   const [showContribute, setShowContribute] = useState(false);
   const [amount, setAmount] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -620,9 +733,10 @@ const GoalCard = ({ goal, onEdit, onDelete, onContribute }: GoalCardProps) => {
           </button>
           <button
             onClick={() => onDelete(goal)}
-            className="rounded-lg px-4 py-2 font-medium text-red-600 transition-colors hover:bg-red-50"
+            disabled={deleting}
+            className="rounded-lg px-4 py-2 font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Delete
+            {deleting ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       </div>
@@ -712,6 +826,7 @@ git commit -m "feat: add GoalCard component with inline Add Funds"
 
 ```typescript
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AxiosError } from 'axios';
 import StatCard from '../components/common/StatCard';
 import GoalForm from '../components/goals/GoalForm';
 import GoalCard from '../components/goals/GoalCard';
@@ -724,11 +839,16 @@ const Goals = () => {
   const [summary, setSummary] = useState<GoalSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const requestIdRef = useRef(0);
 
+  // Used for the initial load and the Retry button: failure here means
+  // there's nothing to show yet, so a full blocking error screen is the
+  // right response.
   const loadAll = useCallback(async () => {
     const requestId = ++requestIdRef.current;
     setError(null);
@@ -747,6 +867,23 @@ const Goals = () => {
       if (requestIdRef.current === requestId) {
         setLoading(false);
       }
+    }
+  }, []);
+
+  // Used after a mutation (create/edit/delete/contribute) already
+  // succeeded. A refresh failure here must NOT look like the mutation
+  // itself failed -- the write already went through, so this only ever
+  // shows a small non-blocking notice, never the full-page error state.
+  const refreshQuietly = useCallback(async () => {
+    try {
+      const [goalsData, summaryData] = await Promise.all([
+        goalService.getGoals(),
+        goalService.getGoalSummary(),
+      ]);
+      setGoals(goalsData);
+      setSummary(summaryData);
+    } catch {
+      setActionError('Saved, but the list could not refresh. Reload the page to see the latest data.');
     }
   }, []);
 
@@ -769,13 +906,26 @@ const Goals = () => {
     if (!window.confirm(`Delete "${goal.title}"? This can't be undone.`)) {
       return;
     }
-    await goalService.deleteGoal(goal.id);
-    await loadAll();
+    setActionError(null);
+    setDeletingId(goal.id);
+    try {
+      await goalService.deleteGoal(goal.id);
+      await refreshQuietly();
+    } catch (err) {
+      const message = (err as AxiosError<{ error: string }>).response?.data?.error || 'Failed to delete goal';
+      setActionError(message);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleContribute = async (goal: Goal, amount: number) => {
+    // Let a failure here throw back up to GoalCard, which displays it
+    // inline -- the mutation itself genuinely failed in that case.
     await goalService.contributeToGoal(goal.id, amount);
-    await loadAll();
+    // A refresh failure here is handled separately (see refreshQuietly)
+    // and never surfaces as a contribution failure.
+    await refreshQuietly();
   };
 
   const handleSubmit = async (data: CreateGoalRequest | UpdateGoalRequest) => {
@@ -786,9 +936,12 @@ const Goals = () => {
       } else {
         await goalService.createGoal(data as CreateGoalRequest);
       }
-      await loadAll();
+      // Close the form as soon as the save itself succeeds, before the
+      // refresh -- a slow or failed refresh afterward shouldn't leave
+      // the form open or make a successful save look unfinished.
       setFormMode(null);
       setEditingGoal(null);
+      await refreshQuietly();
     } finally {
       setSubmitting(false);
     }
@@ -832,6 +985,15 @@ const Goals = () => {
         <StatCard title="Overall Progress" value={formatPercentage(summary?.overallProgress ?? 0, false)} />
       </div>
 
+      {actionError && (
+        <div className="flex items-center justify-between rounded-md bg-red-50 p-3 text-sm text-red-700">
+          <span>{actionError}</span>
+          <button onClick={() => setActionError(null)} className="font-medium underline">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {formMode && (
         <GoalForm
           key={formMode === 'edit' ? editingGoal?.id : 'create'}
@@ -848,7 +1010,14 @@ const Goals = () => {
       <div className="space-y-4">
         {goals.length === 0 && <p className="text-gray-500">No goals yet. Add one to get started.</p>}
         {goals.map((goal) => (
-          <GoalCard key={goal.id} goal={goal} onEdit={handleEdit} onDelete={handleDelete} onContribute={handleContribute} />
+          <GoalCard
+            key={goal.id}
+            goal={goal}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onContribute={handleContribute}
+            deleting={deletingId === goal.id}
+          />
         ))}
       </div>
     </div>
@@ -918,9 +1087,9 @@ curl -s -X POST http://localhost:3001/api/goals -H "Authorization: Bearer $TOKEN
 
 Expected: `{"error":"Current amount must be a non-negative number"}` — confirms Task 1's new validation.
 
-- [ ] **Step 6: Edit a goal**
+- [ ] **Step 6: Edit a goal, including clearing its description**
 
-Edit the goal from Step 3's title/targetAmount/targetDate. Expected: no Category field shown in the edit form, card updates correctly.
+Edit the goal from Step 3's title/targetAmount/targetDate. Expected: no Category field shown in the edit form, card updates correctly. Separately, add a description to a goal, save, then edit it again and clear the description field to empty, save. Expected: the description is actually cleared (not left unchanged) — this is the fix for the edit-mode `description` bug; confirm via `GET /api/goals` that `description` is `null` for that goal.
 
 - [ ] **Step 7: Edit a goal's target date into the past**
 
@@ -928,29 +1097,15 @@ Confirm this succeeds (the backend's update path doesn't enforce future-dates, o
 
 - [ ] **Step 8: Contribute to a goal**
 
-Use "Add Funds" to contribute an amount. Expected: `currentAmount` increases additively, progress bar and stat cards update. Try submitting with the field empty or zero — expected: blocked client-side (`min="0.01"`, `required`).
+Use "Add Funds" to contribute an amount. Expected: `currentAmount` increases additively, progress bar and stat cards update. Try submitting with the field empty or zero — expected: blocked client-side (`min="0.01"`, `required`). Try double-clicking "Add" quickly — expected: the button and input are disabled after the first click, so only one contribution goes through.
 
-- [ ] **Step 9: Confirm the contribution race fix**
+- [ ] **Step 9: Complete a goal, and check aggregate math with multiple goals**
 
-Fire two concurrent contributions to the same goal and confirm both are reflected (not just one):
+Contribute enough to one goal to reach or exceed its target amount. Expected: the card shows "Goal completed!" and the progress bar is full/green. With at least one other, unfinished goal also present, check "Overall Progress" on the stat card — expected: it never exceeds 100%, even though this account now has one overfunded goal (confirms Task 1's `overallProgress` clamp). If you want to directly confirm the `totalRemainingAmount` math from the backend fixes, compare `GET /api/goals/summary`'s `totalRemainingAmount` against the sum of each individual goal's own `remainingAmount` from `GET /api/goals` — they should match exactly, including when one goal is overfunded and another isn't.
 
-```bash
-GOAL_ID="<a goal id from GET /api/goals>"
-curl -s -X POST http://localhost:3001/api/goals/$GOAL_ID/contribute -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"amount":10}' &
-curl -s -X POST http://localhost:3001/api/goals/$GOAL_ID/contribute -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{"amount":15}' &
-wait
-curl -s http://localhost:3001/api/goals/$GOAL_ID -H "Authorization: Bearer $TOKEN"
-```
+- [ ] **Step 10: Delete a goal**
 
-Expected: the goal's `currentAmount` reflects both contributions (+25 total from this step), not just one of them.
-
-- [ ] **Step 10: Complete a goal**
-
-Contribute enough to reach or exceed the target amount. Expected: the card shows "Goal completed!" and the progress bar is full/green.
-
-- [ ] **Step 11: Delete a goal**
-
-Delete a goal, confirming the browser dialog. Expected: disappears from the list, stat cards update. Confirm via curl it's soft-deactivated, not hard-deleted:
+Delete a goal, confirming the browser dialog. Expected: the Delete button shows "Deleting..." and is disabled while the request is in flight, then the goal disappears from the list and stat cards update. Confirm via curl it's soft-deactivated, not hard-deleted:
 
 ```bash
 curl -s "http://localhost:3001/api/goals?active=false" -H "Authorization: Bearer $TOKEN"
@@ -958,16 +1113,24 @@ curl -s "http://localhost:3001/api/goals?active=false" -H "Authorization: Bearer
 
 Expected: the deleted goal is present with `"isActive": false`.
 
-- [ ] **Step 12: Loading and error states**
+- [ ] **Step 11: Delete failure is surfaced, not silent**
 
-Stop the backend, reload `/goals`. Expected: an error message with a working Retry button. Restart the backend, click Retry, confirm recovery.
+Stop the backend, then click Delete on a goal and confirm the dialog. Expected: the Delete button briefly shows "Deleting...", then reverts, and a dismissible error banner appears above the goal list (not a full-page error, and not a silent failure) — confirms `handleDelete`'s new try/catch and `actionError` state. Restart the backend afterward.
 
-- [ ] **Step 13: Final checks**
+- [ ] **Step 12: A successful mutation isn't reported as failed by a broken refresh**
+
+This is harder to trigger precisely without simulating a mid-request network drop, so treat this as a code-reading check rather than a live repro: confirm in `Goals.tsx` that `handleContribute` and `handleSubmit` both call `refreshQuietly` (which only ever sets the small `actionError` banner on failure) rather than `loadAll` (which would replace the whole page with the blocking error screen) — and that `handleSubmit` closes the form immediately after the create/update call succeeds, before the refresh runs.
+
+- [ ] **Step 13: Loading and error states for the initial fetch**
+
+Stop the backend, reload `/goals` (a fresh page load, not a post-mutation refresh). Expected: the full-page error message with a working Retry button (this path still uses `loadAll`, which is correct here since there's no existing data to preserve). Restart the backend, click Retry, confirm recovery.
+
+- [ ] **Step 14: Final checks**
 
 Run: `npm run build:frontend` and `npm run test:backend`
-Expected: both complete cleanly (build with no TS errors, 38/38 backend tests passing)
+Expected: both complete cleanly (build with no TS errors, 39/39 backend tests passing — 38 existing plus the new `incrementGoalAmount` concurrency test)
 
-- [ ] **Step 14: Stop the dev servers**
+- [ ] **Step 15: Stop the dev servers**
 
 Ctrl-C both `npm run dev:frontend` and `npm run dev:backend` processes once all checks above pass.
 
@@ -975,6 +1138,6 @@ Ctrl-C both `npm run dev:frontend` and `npm run dev:backend` processes once all 
 
 ## Self-Review Notes
 
-- **Spec coverage:** all four "Backend fixes required" items (Task 1), the three type fixes (Task 2), the service (Task 3), form with create/edit field differences and no-future-date-constraint-in-edit-mode (Task 4), card with the fully-specified stateful Add Funds control (Task 5), full page with loading/error/retry and the request-id race guard carried forward from 4b (Task 6), manual verification matching the spec's expanded checklist exactly, including both new backend-fix checks (Task 7). Out-of-scope items (reactivation UI, `byCategory`/`urgentGoals` rendering, Dashboard) correctly have no corresponding tasks.
+- **Spec coverage:** all "Backend fixes required" items, now including the corrected (per-goal-summed, not aggregate-clamped) `totalRemainingAmount` math, the `overallProgress` clamp, and a real automated concurrency test for the contribution race fix rather than an unreliable manual one (Task 1); the three type fixes (Task 2); the frontend service (Task 3); form with create/edit field differences, no-future-date-constraint-in-edit-mode, and correct description-clearing semantics (Task 4); card with the fully-specified stateful Add Funds control plus a `deleting` prop for pending-state UI (Task 5); full page with loading/error/retry, the request-id race guard carried forward from 4b, and mutation success decoupled from follow-up refresh failure via `refreshQuietly`/`actionError` (Task 6); manual verification matching the spec's expanded checklist, including the description-clearing check, the delete-failure check, and the multi-goal aggregate-math check (Task 7). Out-of-scope items (reactivation UI, `byCategory`/`urgentGoals` rendering, Dashboard) correctly have no corresponding tasks.
 - **Placeholder scan:** no TBD/TODO markers; every step has complete, runnable code.
-- **Type consistency:** `Goal`, `CreateGoalRequest`, `UpdateGoalRequest`, `GoalSummary`, `GoalCategory` (Task 2) are used identically across `goal.service.ts` (Task 3), `GoalForm.tsx` (Task 4), `GoalCard.tsx` (Task 5), and `Goals.tsx` (Task 6). `onContribute`'s signature (`(goal: Goal, amount: number) => Promise<void>`) matches exactly between `GoalCard`'s prop type (Task 5) and `Goals.tsx`'s `handleContribute` (Task 6). `CATEGORY_LABELS` is duplicated between `GoalForm.tsx` and `GoalCard.tsx` — same deliberate choice as `TransactionForm.tsx`/`TransactionRow.tsx`'s duplicated `CATEGORY_LABELS` in 4b, for the same reason (small, self-contained, used in exactly two places, not worth a shared module).
+- **Type consistency:** `Goal`, `CreateGoalRequest`, `UpdateGoalRequest`, `GoalSummary`, `GoalCategory` (Task 2) are used identically across `goal.service.ts` (Task 3), `GoalForm.tsx` (Task 4), `GoalCard.tsx` (Task 5), and `Goals.tsx` (Task 6). `onContribute`'s signature (`(goal: Goal, amount: number) => Promise<void>`) matches exactly between `GoalCard`'s prop type (Task 5) and `Goals.tsx`'s `handleContribute` (Task 6); `GoalCard`'s new `deleting` prop matches `Goals.tsx`'s `deletingId === goal.id` usage exactly. `CATEGORY_LABELS` is duplicated between `GoalForm.tsx` and `GoalCard.tsx` — same deliberate choice as `TransactionForm.tsx`/`TransactionRow.tsx`'s duplicated `CATEGORY_LABELS` in 4b, for the same reason (small, self-contained, used in exactly two places, not worth a shared module).
