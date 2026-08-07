@@ -61,8 +61,8 @@ Ordered roughly by blast radius if skipped, not by effort.
 
 ## 8. Documentation
 
-- **`README.md` links to `docs/API.md`, `docs/ARCHITECTURE.md`, and `docs/DEPLOYMENT.md` — none of these files exist.** `docs/` currently only has `SETUP.md`. These are referenced but broken links today.
-- Tech stack section in `README.md` is still templated ("Backend: [Your choice - Python/Django, Node.js, etc.]") and hasn't been filled in despite the stack having been decided for months.
+- ~~`README.md` links to `docs/API.md`, `docs/ARCHITECTURE.md`, and `docs/DEPLOYMENT.md` — none of these files exist.~~ **Fixed 2026-08-08** — all three now exist, plus `CONTRIBUTING.md` for the guidelines the README already promised. `DEPLOYMENT.md` documents the deploy plan honestly as not-yet-executed (see item #6 above) rather than describing a live system.
+- ~~Tech stack section in `README.md` is still templated.~~ **Fixed 2026-08-08** — also corrected two overstated feature claims while in there ("ML-powered insights" → rule-based; "multi-bank integration" → manual account tracking, no live bank sync).
 
 ## Suggested order of attack
 
