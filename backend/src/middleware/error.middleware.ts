@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import * as Sentry from '@sentry/node';
 import { ApiError } from '../utils/ApiError';
 
 export function notFoundHandler(req: Request, res: Response): void {
@@ -17,5 +18,6 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
   }
 
   req.log.error({ err }, 'Unhandled error');
+  Sentry.captureException(err);
   res.status(500).json({ error: 'Something went wrong!' });
 }

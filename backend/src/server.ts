@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
+import * as Sentry from '@sentry/node';
 import { config } from './config/env';
 import { logger } from './lib/logger';
 import authRoutes from './routes/auth.routes';
@@ -11,6 +12,10 @@ import goalRoutes from './routes/goal.routes';
 import insightRoutes from './routes/insight.routes';
 import { healthCheck } from './controllers/health.controller';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware';
+
+if (config.sentryDsn) {
+  Sentry.init({ dsn: config.sentryDsn });
+}
 
 const app = express();
 
