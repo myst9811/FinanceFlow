@@ -49,6 +49,7 @@ model Account {
   transactions      Transaction[] @relation("TransactionAccount")
   incomingTransfers Transaction[] @relation("TransactionToAccount")
 
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -70,6 +71,9 @@ model Transaction {
   account   Account  @relation("TransactionAccount", fields: [accountId], references: [id])
   toAccount Account? @relation("TransactionToAccount", fields: [toAccountId], references: [id])
 
+  @@index([userId, date])
+  @@index([accountId])
+  @@index([toAccountId])
   @@map("transactions")
 }
 
@@ -88,6 +92,7 @@ model Goal {
 
   user User @relation(fields: [userId], references: [id])
 
+  @@index([userId])
   @@map("goals")
 }
 
@@ -103,6 +108,7 @@ model Insight {
 
   user User @relation(fields: [userId], references: [id])
 
+  @@index([userId])
   @@map("insights")
 }
 

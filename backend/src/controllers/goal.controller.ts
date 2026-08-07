@@ -7,6 +7,7 @@ import {
 } from '../types/goal.types';
 import { validateGoalInput, validateGoalUpdate } from '../utils/validation';
 import { ApiError } from '../utils/ApiError';
+import { buildPaginationMeta, parsePagination } from '../utils/pagination';
 import { incrementGoalAmount } from '../services/goal.service';
 
 // Helper function to calculate goal progress metrics
@@ -86,17 +87,28 @@ export const getGoals = async (
     where.category = category;
   }
 
-  const goals = await prisma.goal.findMany({
-    where,
-    orderBy: {
-      targetDate: 'asc',
-    },
-  });
+  const pagination = parsePagination(req.query);
+
+  const [goals, totalCount] = await Promise.all([
+    prisma.goal.findMany({
+      where,
+      orderBy: {
+        targetDate: 'asc',
+      },
+      skip: pagination.skip,
+      take: pagination.limit,
+    }),
+    prisma.goal.count({ where }),
+  ]);
 
   // Add progress metrics to each goal
   const goalsWithMetrics = goals.map(calculateGoalMetrics);
 
-  res.status(200).json({ goals: goalsWithMetrics, count: goals.length });
+  res.status(200).json({
+    goals: goalsWithMetrics,
+    count: goalsWithMetrics.length,
+    ...buildPaginationMeta(totalCount, pagination.page, pagination.limit),
+  });
 };
 
 // Get a single goal by ID

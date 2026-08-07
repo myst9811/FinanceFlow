@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { ApiError } from '../utils/ApiError';
 import { InsightType, Priority, TransactionCategory } from '../generated/prisma';
+import type { PaginationParams } from '../utils/pagination';
 
 interface InsightFilters {
   isRead?: boolean;
@@ -8,7 +9,7 @@ interface InsightFilters {
   priority?: Priority;
 }
 
-export async function getInsightsForUser(userId: string, filters: InsightFilters) {
+export async function getInsightsForUser(userId: string, filters: InsightFilters, pagination: PaginationParams) {
   await generateInsightsForUser(userId);
 
   const where: any = { userId };
@@ -23,7 +24,17 @@ export async function getInsightsForUser(userId: string, filters: InsightFilters
     where.priority = filters.priority;
   }
 
-  return prisma.insight.findMany({ where, orderBy: { createdAt: 'desc' } });
+  const [insights, totalCount] = await Promise.all([
+    prisma.insight.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: pagination.skip,
+      take: pagination.limit,
+    }),
+    prisma.insight.count({ where }),
+  ]);
+
+  return { insights, totalCount };
 }
 
 export async function getInsightsSummaryForUser(userId: string) {

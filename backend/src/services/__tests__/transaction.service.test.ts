@@ -3,6 +3,7 @@ import { prisma } from '../../lib/prisma';
 import { ApiError } from '../../utils/ApiError';
 import {
   createTransactionForUser,
+  getTransactionsForUser,
   updateTransactionForUser,
   deleteTransactionForUser,
 } from '../transaction.service';
@@ -238,5 +239,32 @@ describe('deleteTransactionForUser', () => {
     ).rejects.toMatchObject(new ApiError(404, 'Transaction not found'));
 
     expect(await getBalance(accountAId)).toBe(60);
+  });
+});
+
+describe('getTransactionsForUser pagination', () => {
+  beforeEach(async () => {
+    for (const amount of [10, 20, 30]) {
+      await createTransactionForUser(userId, {
+        ...baseInput,
+        accountId: accountAId,
+        amount,
+        type: 'EXPENSE',
+      });
+    }
+  });
+
+  it('returns totalCount and a limited page of results', async () => {
+    const { transactions, totalCount } = await getTransactionsForUser(userId, {}, { page: 1, limit: 2, skip: 0 });
+
+    expect(totalCount).toBe(3);
+    expect(transactions).toHaveLength(2);
+  });
+
+  it('returns the remaining items on the second page', async () => {
+    const { transactions, totalCount } = await getTransactionsForUser(userId, {}, { page: 2, limit: 2, skip: 2 });
+
+    expect(totalCount).toBe(3);
+    expect(transactions).toHaveLength(1);
   });
 });

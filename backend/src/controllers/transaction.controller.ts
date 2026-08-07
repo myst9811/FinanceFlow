@@ -6,6 +6,7 @@ import {
 } from '../types/transaction.types';
 import { validateTransactionInput, validateTransactionUpdate } from '../utils/validation';
 import { ApiError } from '../utils/ApiError';
+import { buildPaginationMeta, parsePagination } from '../utils/pagination';
 import {
   createTransactionForUser,
   getTransactionsForUser,
@@ -65,18 +66,28 @@ export const getTransactions = async (
     search,
   } = req.query as any;
 
-  const transactions = await getTransactionsForUser(req.user.userId, {
-    accountId,
-    type,
-    category,
-    startDate,
-    endDate,
-    minAmount: minAmount !== undefined ? parseFloat(minAmount) : undefined,
-    maxAmount: maxAmount !== undefined ? parseFloat(maxAmount) : undefined,
-    search,
-  });
+  const pagination = parsePagination(req.query);
 
-  res.status(200).json({ transactions, count: transactions.length });
+  const { transactions, totalCount } = await getTransactionsForUser(
+    req.user.userId,
+    {
+      accountId,
+      type,
+      category,
+      startDate,
+      endDate,
+      minAmount: minAmount !== undefined ? parseFloat(minAmount) : undefined,
+      maxAmount: maxAmount !== undefined ? parseFloat(maxAmount) : undefined,
+      search,
+    },
+    pagination
+  );
+
+  res.status(200).json({
+    transactions,
+    count: transactions.length,
+    ...buildPaginationMeta(totalCount, pagination.page, pagination.limit),
+  });
 };
 
 // Get a single transaction by ID

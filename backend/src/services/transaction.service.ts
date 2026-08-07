@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { ApiError } from '../utils/ApiError';
 import { TransactionCategory, TransactionType } from '../generated/prisma';
+import type { PaginationParams } from '../utils/pagination';
 
 const ACCOUNT_SUMMARY_SELECT = {
   name: true,
@@ -121,7 +122,11 @@ export async function createTransactionForUser(userId: string, input: CreateTran
   });
 }
 
-export async function getTransactionsForUser(userId: string, filters: TransactionFilters) {
+export async function getTransactionsForUser(
+  userId: string,
+  filters: TransactionFilters,
+  pagination: PaginationParams
+) {
   const where: any = { userId };
 
   if (filters.accountId) {
@@ -163,11 +168,18 @@ export async function getTransactionsForUser(userId: string, filters: Transactio
     };
   }
 
-  return prisma.transaction.findMany({
-    where,
-    include: TRANSACTION_INCLUDE,
-    orderBy: { date: 'desc' },
-  });
+  const [transactions, totalCount] = await Promise.all([
+    prisma.transaction.findMany({
+      where,
+      include: TRANSACTION_INCLUDE,
+      orderBy: { date: 'desc' },
+      skip: pagination.skip,
+      take: pagination.limit,
+    }),
+    prisma.transaction.count({ where }),
+  ]);
+
+  return { transactions, totalCount };
 }
 
 export async function getTransactionByIdForUser(userId: string, id: string) {
