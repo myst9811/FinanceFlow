@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../types/insight.types';
 import { ApiError } from '../utils/ApiError';
+import { buildPaginationMeta, parsePagination } from '../utils/pagination';
 import {
   getInsightsForUser,
   getInsightsSummaryForUser,
@@ -18,14 +19,23 @@ export const getInsights = async (
   }
 
   const { isRead, type, priority } = req.query as any;
+  const pagination = parsePagination(req.query);
 
-  const insights = await getInsightsForUser(req.user.userId, {
-    isRead: isRead !== undefined ? isRead === 'true' : undefined,
-    type,
-    priority,
+  const { insights, totalCount } = await getInsightsForUser(
+    req.user.userId,
+    {
+      isRead: isRead !== undefined ? isRead === 'true' : undefined,
+      type,
+      priority,
+    },
+    pagination
+  );
+
+  res.status(200).json({
+    insights,
+    count: insights.length,
+    ...buildPaginationMeta(totalCount, pagination.page, pagination.limit),
   });
-
-  res.status(200).json({ insights, count: insights.length });
 };
 
 // Get insight summary counts for the authenticated user

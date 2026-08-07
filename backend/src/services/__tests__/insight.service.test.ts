@@ -64,7 +64,7 @@ describe('getInsightsForUser', () => {
       data: { userId, type: 'SPENDING_ALERT', title: 'New', description: 'new', priority: 'LOW' },
     });
 
-    const insights = await getInsightsForUser(userId, {});
+    const { insights } = await getInsightsForUser(userId, {}, { page: 1, limit: 50, skip: 0 });
 
     expect(insights.map((i) => i.title)).toEqual(['New', 'Old']);
   });
@@ -77,7 +77,7 @@ describe('getInsightsForUser', () => {
       data: { userId, type: 'SPENDING_ALERT', title: 'Read', description: 'x', priority: 'LOW', isRead: true },
     });
 
-    const insights = await getInsightsForUser(userId, { isRead: true });
+    const { insights } = await getInsightsForUser(userId, { isRead: true }, { page: 1, limit: 50, skip: 0 });
 
     expect(insights.map((i) => i.title)).toEqual(['Read']);
   });
@@ -444,7 +444,7 @@ describe('getInsightsForUser - generation on read', () => {
       data: { userId, accountId, amount: 200, description: 'groceries', category: 'FOOD_DINING', type: 'EXPENSE', date: thisMonthDate() },
     });
 
-    const insights = await getInsightsForUser(userId, {});
+    const { insights } = await getInsightsForUser(userId, {}, { page: 1, limit: 50, skip: 0 });
 
     expect(insights.some((i) => i.type === 'SPENDING_ALERT')).toBe(true);
   });
