@@ -12,6 +12,11 @@ import { notFoundHandler, errorHandler } from './middleware/error.middleware';
 
 const app = express();
 
+// Trust the first proxy hop (Vercel's edge network sits in front of the
+// deployed function). Without this, req.ip resolves to the proxy's address
+// for every client, which would make the auth rate limiters below share one
+// bucket across all users instead of limiting per client.
+app.set('trust proxy', 1);
 
 // Middleware
 
