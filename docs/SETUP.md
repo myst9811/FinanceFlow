@@ -28,7 +28,7 @@ The default `DATABASE_URL` matches the Postgres container started in step 3.
 npm run db:up
 ```
 
-Starts a Postgres 16 container (see `docker-compose.yml`) on `localhost:5432` with a persistent volume.
+Starts a Postgres 16 container (see `docker-compose.yml`) on `localhost:5433` with a persistent volume.
 Stop it with `npm run db:down`.
 
 ## 4. Set up the database schema
@@ -56,7 +56,7 @@ Backend tests run against a separate `financeflow_test` database so they never t
 ```bash
 cp backend/.env.test.example backend/.env.test
 docker exec financeflow-db-1 createdb -U financeflow financeflow_test
-cd backend && DATABASE_URL="postgresql://financeflow:financeflow@localhost:5432/financeflow_test?schema=public" npx prisma migrate deploy
+cd backend && DATABASE_URL="postgresql://financeflow:financeflow@localhost:5433/financeflow_test?schema=public" npx prisma migrate deploy
 npm test
 ```
 
