@@ -1,21 +1,20 @@
 # FinanceFlow - Personal Finance Analytics Engine
 
-An intelligent personal finance management system that aggregates financial data from multiple sources and provides ML-powered insights.
+A personal finance management system with manual account/transaction tracking, goal budgeting, and rule-based spending insights.
 
 ## Features
-- 🏦 Multi-bank account integration
-- 📊 Intelligent transaction categorization
+- 🏦 Multi-account tracking (checking, savings, credit, investment — manually managed, no live bank sync yet)
+- 📊 Transaction categorization and filtering
 - 📈 Spending pattern analysis
 - 🎯 Goal tracking and budgeting
-- 🤖 ML-powered financial insights
-- 📱 Mobile-responsive dashboard
+- 💡 Rule-based financial insights (spending alerts, savings opportunities, budget recommendations, goal-pace tracking, unusual-activity detection)
+- 📱 Responsive dashboard
 
 ## Tech Stack
-- Backend: [Your choice - Python/Django, Node.js, etc.]
-- Frontend: [Your choice - React, Vue, etc.]
+- Backend: Node.js, Express, TypeScript, Prisma
+- Frontend: React, TypeScript, Vite, Tailwind CSS
 - Database: PostgreSQL
-- ML/Analytics: Python, scikit-learn, pandas
-- Infrastructure: Docker, AWS/GCP
+- Infrastructure: Docker (local dev), targeting Vercel + Neon for deployment
 
 ## Quick Start
 See [docs/SETUP.md](docs/SETUP.md) for full local setup instructions (install deps, start the dev database, run migrations, start both apps).
@@ -26,7 +25,7 @@ See [docs/SETUP.md](docs/SETUP.md) for full local setup instructions (install de
 - [Deployment Guide](docs/DEPLOYMENT.md)
 
 ## Contributing
-Please read our contributing guidelines before submitting PRs.
+See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting PRs.
 
 ## License
 MIT License
