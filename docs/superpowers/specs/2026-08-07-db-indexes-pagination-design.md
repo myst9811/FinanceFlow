@@ -22,6 +22,8 @@ model Account {
 model Transaction {
   // ...unchanged fields...
   @@index([userId, date])
+  @@index([accountId])
+  @@index([toAccountId])
   @@map("transactions")
 }
 
@@ -40,7 +42,9 @@ model Insight {
 
 `Transaction` gets a **composite** index on `[userId, date]` rather than a plain `[userId]` index: every transaction list query (`getTransactionsForUser` in `backend/src/services/transaction.service.ts`) filters by `userId` and always sorts by `date desc` (`orderBy: { date: 'desc' }`), so the composite index serves both the filter and the sort in one structure instead of needing a second index for the ordering. `Account`, `Goal`, and `Insight` get plain `[userId]` indexes — their list queries filter by `userId` but sort by different, less uniformly-hot columns (`createdAt`, `targetDate`, `createdAt` respectively), and none of them are high-volume enough to justify a composite index today.
 
-`accountId`/`toAccountId` on `Transaction` deliberately get no index of their own. The only place `accountId` is filtered directly is the optional `accountId` filter in `getTransactionsForUser` — but that filter always runs alongside the `userId` filter, which is already highly selective (scoped to one user's data), so it rides on the `[userId, date]` index's leading column and filters the (already small) per-user result set in memory. Adding a dedicated index for a secondary filter on an already-narrow set isn't worth the write-amplification cost it'd add to every transaction insert/update.
+`accountId` and `toAccountId` on `Transaction` **do** each get their own index, despite neither being the primary read-query concern (the `accountId` filter in `getTransactionsForUser` rides fine on the `[userId, date]` composite's leading column, since it always runs alongside `userId`). The reason is a different, Postgres-specific one: when a referenced `Account` row is deleted, Postgres must scan the `transactions` table to check for rows still referencing that `accountId`/`toAccountId` (to enforce or cascade the foreign key) — without an index on those columns, that's a full table scan. Today `deleteAccount` (`backend/src/controllers/account.controller.ts`) only ever soft-deletes (`isActive: false`), so this never fires in application code — but it already fires today in test cleanup (`transaction.service.test.ts`'s and `insight.service.test.ts`'s `afterEach` hooks hard-delete `Account` rows via `prisma.account.deleteMany`), just at a scale too small to notice. Indexing both now is cheap, standard practice for FK columns, and removes a latent footgun for whenever account hard-deletion is ever added as a real feature.
+
+`Insight` gets a plain `[userId]` index rather than a wider composite covering the duplicate-check query inside `generateInsightsForUser` (`where: { userId, type, title, isRead: false }`, run once per candidate in a loop). A composite index there was considered and rejected: insights are naturally low-volume per user (a handful of generated rows, not thousands — five checks run periodically, each producing at most a few candidates), so the plain `[userId]` index already fixes the actually-flagged gap (a full scan across *all* users' insights). The loop itself, and `generateInsightsForUser` re-running on every read (`getInsightsForUser`/`getInsightsSummaryForUser` both call it unconditionally), are real but separate architectural concerns — tracked as new items in `docs/PRODUCTION_READINESS.md` rather than folded into this schema/pagination task.
 
 This migration is generated with `prisma migrate dev` locally (creates the SQL file under `backend/prisma/migrations/`) and is a pure additive schema change — no data migration, no application code depends on the index existing (indexes are a query-planner concern, transparent to Prisma's generated client).
 
@@ -76,11 +80,18 @@ export function buildPaginationMeta(totalCount: number, page: number, limit: num
 }
 
 function parsePositiveInt(value: unknown): number | undefined {
-  if (typeof value !== 'string') return undefined;
-  const parsed = parseInt(value, 10);
-  return Number.isNaN(parsed) ? undefined : parsed;
+  if (typeof value === 'number') {
+    return Number.isInteger(value) && value > 0 ? value : undefined;
+  }
+  if (typeof value === 'string') {
+    const parsed = parseInt(value, 10);
+    return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
+  }
+  return undefined;
 }
 ```
+
+`parsePositiveInt` accepts both strings and numbers. In production the only real call site is `parsePagination(req.query)`, and Express's `req.query` values are always strings (or `undefined`) — never numbers — so the string branch is what actually runs in the deployed app. The number branch exists for robustness at the call boundary itself (e.g. a test calling `parsePagination({ page: 2 })` with a real number, a natural mistake given the field is conceptually numeric) rather than for any real HTTP request shape. `parsePagination`'s `query` parameter itself stays required (not defaulted to `{}`) — `req.query` is never `undefined` in Express, so making it optional would guard a call pattern that can't occur at any real call site in this codebase.
 
 `DEFAULT_LIMIT = 50` is chosen so that existing frontend calls — which don't send `page`/`limit` today — keep working unchanged in practice (comfortably covers this project's current demo-scale data) while still capping the actual risk the gap analysis flagged: a truly unbounded response as data grows. `MAX_LIMIT = 100` stops a client from requesting an arbitrarily large page and defeating the point.
 
@@ -109,7 +120,7 @@ Frontend impact: none in this pass (confirmed as a deliberate scope boundary abo
 
 Two additions, both cheap and targeted rather than repeating the same pagination test three times across every resource (goals/insights/transactions all share the identical `pagination.ts` helper, so the real risk surface is that helper plus one real end-to-end example):
 
-- **`backend/src/utils/__tests__/pagination.test.ts`** — pure unit tests on `parsePagination`/`buildPaginationMeta`: defaults when no query params given (`page: 1, limit: 50`), clamping (`limit` above `MAX_LIMIT` clamps to 100, `page`/`limit` of `0` or negative clamp to `1`), non-numeric input falls back to defaults, and `buildPaginationMeta`'s `totalPages` math (including the `totalCount: 0` edge case, which should still report `totalPages: 1` rather than `0`, matching how an empty result set is still "one empty page" rather than a nonsensical zero-page response).
+- **`backend/src/utils/__tests__/pagination.test.ts`** — pure unit tests on `parsePagination`/`buildPaginationMeta`: defaults when no query params given (`page: 1, limit: 50`), clamping (`limit` above `MAX_LIMIT` clamps to 100, `page`/`limit` of `0` or negative clamp to `1`), string-typed query values (matching real `req.query`), non-numeric/garbage input falling back to defaults, and `buildPaginationMeta`'s `totalPages` math (including the `totalCount: 0` edge case, which should still report `totalPages: 1` rather than `0`, matching how an empty result set is still "one empty page" rather than a nonsensical zero-page response).
 - **`backend/src/services/__tests__/transaction.service.test.ts`** (extended, not a new file — follows the existing convention of one test file per service) — a new `describe('getTransactionsForUser pagination')` block: create 3 transactions for a test user, request `limit: 2`, assert `totalCount: 3` and 2 returned transactions; request `page: 2, limit: 2`, assert the remaining 1 transaction is returned.
 
 ## Error handling / failure modes
