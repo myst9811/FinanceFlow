@@ -13,3 +13,5 @@ dist
 # Compiled JS files in src (TypeScript source should be .ts only)
 /src/**/*.js
 !/src/generated/**/*.js
+.vercel
+.env*
