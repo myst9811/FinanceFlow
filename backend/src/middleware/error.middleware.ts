@@ -7,17 +7,25 @@ export function notFoundHandler(req: Request, res: Response): void {
 }
 
 export function errorHandler(err: unknown, req: Request, res: Response, next: NextFunction): void {
+  const isApiError = err instanceof ApiError;
+
+  // Expected errors (validation, not-found, etc.) aren't incidents - only log
+  // and report genuinely unexpected ones, and do so even if headers were
+  // already sent, so they don't vanish without a trace.
+  if (!isApiError) {
+    req.log.error({ err }, 'Unhandled error');
+    Sentry.captureException(err);
+  }
+
   if (res.headersSent) {
     next(err);
     return;
   }
 
-  if (err instanceof ApiError) {
+  if (isApiError) {
     res.status(err.statusCode).json({ error: err.message });
     return;
   }
 
-  req.log.error({ err }, 'Unhandled error');
-  Sentry.captureException(err);
   res.status(500).json({ error: 'Something went wrong!' });
 }
