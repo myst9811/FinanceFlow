@@ -47,10 +47,11 @@ Ordered roughly by blast radius if skipped, not by effort.
 
 ## 6. Deployment / Infra (sub-project 6, per the Vercel spec)
 
-- Per `docs/superpowers/specs/2026-07-23-vercel-serverless-adaptation-design.md`, the code/config prep for Vercel is done, but **nothing has actually been provisioned**: no Neon database, no Vercel projects created, no env vars set, no live deploy, no smoke test. This is explicitly the largest remaining gap.
-- No `vercel.json` — intentional per the spec (zero-config Express), but Root Directory (`backend/` vs `frontend/`) has to be set by hand per-project when they're created; nothing enforces this stays correct.
-- Secrets management is entirely manual (`.env` files) — no documented process for rotating `JWT_SECRET` or DB credentials in production.
-- No documented rollback procedure if a bad deploy ships.
+- ~~Nothing has actually been provisioned.~~ **Done 2026-08-08** — Neon database, both Vercel projects (`financeflow-api`, `financeflow-web`), env vars, git-connected auto-deploy on push to `main`, and a full smoke test (register/login/CORS/account/transaction) all live. Details, including real gotchas hit during setup that the original design spec didn't anticipate (framework preset auto-detection, Root Directory not being CLI-settable, `*.vercel.app` name collisions), in `docs/DEPLOYMENT.md`.
+- ~~Root Directory has to be set by hand per-project; nothing enforces this stays correct.~~ Set for both projects (`backend`/`frontend` respectively) via the Vercel REST API (not exposed by the CLI or found in the dashboard's obvious location — see `docs/DEPLOYMENT.md`).
+- Secrets management is still entirely manual (`vercel env add` by hand) — no documented process for *rotating* `JWT_SECRET` or DB credentials once live, only for initial setup.
+- Still no documented rollback procedure beyond "Vercel's standard dashboard/CLI rollback applies" — hasn't been exercised for real.
+- `SENTRY_DSN` remains unset — the opt-in Sentry integration from the observability pass is still inactive in production. No Sentry project has been created.
 
 ## 7. Frontend
 
@@ -66,11 +67,11 @@ Ordered roughly by blast radius if skipped, not by effort.
 
 ## Suggested order of attack
 
-1. **CI first** (#4) — cheapest to add, and it's the safety net for everything else you're about to touch.
-2. **Auth security** (#1: rate limiting on `/api/auth/*`, plus a first pass at auth/authorization tests from #3) — highest risk if skipped, moderate effort.
-3. **DB indexes + pagination** (#5) — cheap schema migration, prevents a slow-query cliff post-launch.
-4. **Observability minimum bar** (#2: DB-aware `/health`, structured error logging, pick an error tracker) — needed before you can safely operate #6.
-5. **Provision and deploy** (#6) — the actual "go live" step, do this once 1–4 give you a safety net.
-6. **Fill remaining test gaps and docs** (#3, #8) — can trail the launch but shouldn't be dropped indefinitely.
+1. ~~**CI first** (#4)~~ — done, but paused/unmerged by choice (PR #8) pending the account's $0 Actions budget cap.
+2. ~~**Auth security** (#1, #3)~~ — done, merged (PR #9).
+3. ~~**DB indexes + pagination** (#5)~~ — done, merged (PR #10).
+4. ~~**Observability minimum bar** (#2)~~ — done, merged (PR #11).
+5. ~~**Provision and deploy** (#6)~~ — **done 2026-08-08**, live at the URLs in `docs/DEPLOYMENT.md`.
+6. **Fill remaining test gaps and docs** (#3, #8) — the only item not started: stats-aggregation/N+1 findings from item #5, authorization tests for accounts/transactions/insights beyond the existing goals example, and a Sentry project if error tracking should actually go active.
 
-Happy to turn any one of these into a proper spec/plan (via the `superpowers` writing-plans workflow already used for the rest of this repo's features) and start implementing — just say which to tackle first.
+Happy to turn the remaining item into a proper spec/plan (via the `superpowers` writing-plans workflow already used for the rest of this repo's features) and start implementing — just say the word.
