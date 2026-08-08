@@ -94,6 +94,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     throw new ApiError(401, 'Invalid email or password');
   }
 
+  if (!user.isActive) {
+    throw new ApiError(403, 'Account deactivated');
+  }
+
   // Generate JWT token
   const payload: JwtPayload = {
     userId: user.id,

@@ -23,3 +23,15 @@ export const registerLimiter = rateLimit({
     });
   },
 });
+
+export const googleAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: 'Too many login attempts from this IP, please try again later.',
+    });
+  },
+});
