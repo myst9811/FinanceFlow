@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -50,7 +51,15 @@ app.use(cors({
   },
 }));
 
-app.use(pinoHttp({ logger }));
+app.use(pinoHttp({
+  logger,
+  // Always generate a fresh UUID server-side rather than trusting/propagating
+  // a client-supplied X-Request-Id - this is a public API, and honoring
+  // client-chosen trace IDs would let a caller inject arbitrary values into
+  // our logs. A UUID (vs. pino-http's default per-process counter) also stays
+  // unique across restarts and multiple warm serverless instances.
+  genReqId: () => randomUUID(),
+}));
 
 app.use((req, res, next) => {
   res.setHeader('X-Request-Id', String(req.id));
