@@ -5,9 +5,21 @@
 | | URL |
 |---|---|
 | Backend (`chronosfin-api`) | https://chronosfin-api.vercel.app |
-| Frontend (`chronosfin-web`) | https://chronosfin-web.vercel.app |
+| Frontend (`chronosfin-web`) | https://chronosfin-web.vercel.app, custom domain `chronosfin.shannensaikia.in` (added 2026-08-08, pending DNS — see below) |
 
 Both projects are connected to this GitHub repo (`myst9811/ChronosFin`) — pushes to `main` trigger automatic production deploys. Database is Neon (`neon-citron-lantern`), provisioned via Vercel's Marketplace integration.
+
+## Custom domain: `chronosfin.shannensaikia.in`
+
+Added to `chronosfin-web` as a project domain via the API (`POST /v10/projects/chronosfin-web/domains`, same reason as the `.vercel.app` short names above — a real tracked domain, not `vercel alias set`). `shannensaikia.in` is registered/DNS-hosted at GoDaddy (`ns03`/`ns04.domaincontrol.com` nameservers, not delegated to Vercel), so DNS has to be added manually rather than via `vercel dns`:
+
+| Type | Name | Value |
+|---|---|---|
+| CNAME | `chronosfin` | `cname.vercel-dns.com` |
+
+Same pattern as the already-working `project-exogenesis.shannensaikia.in`. Vercel auto-issues SSL once DNS resolves — no separate cert step. Check status any time with `GET https://api.vercel.com/v6/domains/chronosfin.shannensaikia.in/config?slug=shannen-saikias-projects` (`"misconfigured": false` once the CNAME has propagated and verified).
+
+`CORS_ORIGIN` on the backend already includes this domain (comma-separated alongside `chronosfin-web.vercel.app`) and the backend has been redeployed — no further backend changes needed once DNS resolves.
 
 ## Topology
 
@@ -52,7 +64,7 @@ Backend project (`chronosfin-api`) — all set, values never displayed during se
 | `DIRECT_URL` | Manually mirrored from the integration's `DATABASE_URL_UNPOOLED` |
 | `JWT_SECRET` | Generated fresh via `openssl rand -base64 32` (separate values for Production/Preview vs. Development, since Vercel doesn't allow a "sensitive" value on Development) |
 | `JWT_EXPIRES_IN` | `7d` |
-| `CORS_ORIGIN` | `https://chronosfin-web.vercel.app` |
+| `CORS_ORIGIN` | `https://chronosfin-web.vercel.app,https://chronosfin.shannensaikia.in` |
 | `SENTRY_DSN` | Not set — observability's Sentry integration remains opt-in/inactive until a Sentry project is created |
 
 `server.ts`'s CORS config also allows any `*.vercel.app` origin automatically, so preview deployments (one per PR/branch, unpredictable subdomains) work without needing `CORS_ORIGIN` updated per-PR.
