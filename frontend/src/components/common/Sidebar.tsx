@@ -11,7 +11,7 @@ import { NavLink } from 'react-router-dom';
 import type { NavigationItem } from '../../types';
 
 const navigation: NavigationItem[] = [
-  { name: 'Dashboard', href: '/', icon: HomeIcon },
+  { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Accounts', href: '/accounts', icon: BanknotesIcon },
   { name: 'Transactions', href: '/transactions', icon: CreditCardIcon },
   { name: 'Goals', href: '/goals', icon: FlagIcon },
@@ -44,14 +44,14 @@ const Sidebar: React.FC = () => {
         fixed inset-y-0 left-0 z-40 w-64
       `}>
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-primary-600">ChronosFin</h1>
+          <img src="/chronosfin-logo.svg" alt="ChronosFin" className="h-9 w-auto" />
         </div>
         <nav className="mt-6">
           {navigation.map((item) => (
             <NavLink
               key={item.name}
               to={item.href}
-              end={item.href === '/'}
+              end={item.href === '/dashboard'}
               className={({ isActive }) =>
                 `flex items-center px-6 py-3 transition-colors ${
                   isActive

@@ -55,13 +55,8 @@ const Header = () => {
 
           {/* Logo & Brand */}
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center">
-              <div className="h-10 w-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">F</span>
-              </div>
-              <span className="ml-3 text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                ChronosFin
-              </span>
+            <div className="flex-shrink-0 flex items-center lg:hidden pl-14">
+              <img src="/chronosfin-logo.svg" alt="ChronosFin" className="h-8 w-auto" />
             </div>
           </div>
 

@@ -1,0 +1,559 @@
+/* Scoped to .landing-page so nothing here collides with the app's global
+   Tailwind component classes (.btn-primary etc. are already defined in
+   index.css for the authenticated app) or leaks out of this page. */
+
+.landing-page {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --ink: #111827;
+  --ink-muted: #5b6472;
+  --ink-faint: #8891a0;
+  --accent: #2563eb;
+  --accent-deep: #1d4ed8;
+  --success: #0f9d70;
+  --line: #e3e7ee;
+  --line-strong: #cdd3dd;
+  --radius: 6px;
+  --shadow: 0 1px 2px rgba(17, 24, 39, 0.04), 0 8px 24px -12px rgba(17, 24, 39, 0.10);
+
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+@media (prefers-color-scheme: dark) {
+  .landing-page {
+    --bg: #0d1117;
+    --surface: #151b23;
+    --surface-2: #1b222c;
+    --ink: #e6e9ef;
+    --ink-muted: #9aa4b2;
+    --ink-faint: #6b7484;
+    --accent: #5b8def;
+    --accent-deep: #7ba3f5;
+    --success: #34d399;
+    --line: #232b36;
+    --line-strong: #303a47;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.5);
+  }
+}
+
+:root[data-theme="dark"] .landing-page {
+  --bg: #0d1117;
+  --surface: #151b23;
+  --surface-2: #1b222c;
+  --ink: #e6e9ef;
+  --ink-muted: #9aa4b2;
+  --ink-faint: #6b7484;
+  --accent: #5b8def;
+  --accent-deep: #7ba3f5;
+  --success: #34d399;
+  --line: #232b36;
+  --line-strong: #303a47;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -16px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="light"] .landing-page {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --ink: #111827;
+  --ink-muted: #5b6472;
+  --ink-faint: #8891a0;
+  --accent: #2563eb;
+  --accent-deep: #1d4ed8;
+  --success: #0f9d70;
+  --line: #e3e7ee;
+  --line-strong: #cdd3dd;
+  --shadow: 0 1px 2px rgba(17, 24, 39, 0.04), 0 8px 24px -12px rgba(17, 24, 39, 0.10);
+}
+
+@font-face {
+  font-family: 'Fraunces';
+  src: url('/fonts/fraunces-variable.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+.landing-page * { box-sizing: border-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-page * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+.landing-page a { color: inherit; }
+.landing-page a:focus-visible,
+.landing-page button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.landing-page h1,
+.landing-page h2,
+.landing-page h3 {
+  font-family: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  font-weight: 600;
+  text-wrap: balance;
+  margin: 0;
+  color: var(--ink);
+}
+
+.landing-page .eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.landing-page .mono {
+  font-family: ui-monospace, 'SF Mono', 'IBM Plex Mono', Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.landing-page .wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ---------- header ---------- */
+
+.landing-page .site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.landing-page .wordmark {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+.landing-page .wordmark img {
+  height: 34px;
+  width: auto;
+  display: block;
+}
+
+.landing-page .nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.landing-page .nav-links a {
+  text-decoration: none;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+.landing-page .nav-links a:hover { color: var(--ink); }
+
+.landing-page .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+.landing-page .btn:active { transform: translateY(1px); }
+.landing-page .btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+}
+.landing-page .btn-primary:hover { background: var(--accent-deep); }
+.landing-page .btn-ghost {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.landing-page .btn-ghost:hover { border-color: var(--ink-faint); background: var(--surface-2); }
+
+/* ---------- hero ---------- */
+
+.landing-page .hero {
+  padding: 64px 0 88px;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.landing-page .hero-copy .eyebrow { margin-bottom: 16px; }
+
+.landing-page .hero h1 {
+  font-size: clamp(2.1rem, 4vw, 3.1rem);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+
+.landing-page .hero-sub {
+  margin: 22px 0 0;
+  max-width: 46ch;
+  font-size: 1.05rem;
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+
+.landing-page .hero-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+
+.landing-page .hero-note {
+  margin-top: 18px;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+
+/* ---------- ledger mock ---------- */
+
+.landing-page .ledger {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.landing-page .ledger-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.landing-page .ledger-head .label {
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.02em;
+}
+
+.landing-page .ledger-head .balance {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.landing-page .ledger-head .chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.landing-page .ledger-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 13px 22px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.88rem;
+}
+.landing-page .ledger-row:last-of-type { border-bottom: none; }
+
+.landing-page .ledger-row .date {
+  color: var(--ink-faint);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.landing-page .ledger-row .desc { min-width: 0; }
+.landing-page .ledger-row .desc .name {
+  color: var(--ink);
+  font-weight: 500;
+}
+.landing-page .ledger-row .desc .cat {
+  display: block;
+  color: var(--ink-faint);
+  font-size: 0.76rem;
+  margin-top: 1px;
+}
+
+.landing-page .ledger-row .amt {
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: right;
+}
+.landing-page .ledger-row .amt.pos { color: var(--success); }
+.landing-page .ledger-row .amt.neg { color: var(--ink); }
+
+.landing-page .ledger-goal {
+  padding: 18px 22px 22px;
+  background: var(--surface-2);
+}
+
+.landing-page .ledger-goal-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 9px;
+  font-size: 0.82rem;
+}
+.landing-page .ledger-goal-top .gname { font-weight: 600; }
+.landing-page .ledger-goal-top .gpct { color: var(--accent); font-weight: 600; }
+
+.landing-page .ledger-goal-bar {
+  height: 6px;
+  background: var(--line-strong);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.landing-page .ledger-goal-bar > span {
+  display: block;
+  height: 100%;
+  width: 62%;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+.landing-page .ledger-goal-foot {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: var(--ink-faint);
+}
+
+/* ---------- generic section rhythm ---------- */
+
+.landing-page section { padding: 72px 0; }
+
+.landing-page .section-head {
+  max-width: 62ch;
+  margin-bottom: 44px;
+}
+.landing-page .section-head h2 {
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  margin-top: 12px;
+}
+.landing-page .section-head p {
+  margin: 14px 0 0;
+  color: var(--ink-muted);
+  max-width: 58ch;
+}
+
+.landing-page .rule {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 0;
+}
+
+/* ---------- features ---------- */
+
+.landing-page .feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.landing-page .feature {
+  background: var(--surface);
+  padding: 28px 26px;
+}
+
+.landing-page .feature h3 {
+  font-size: 1.02rem;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+.landing-page .feature p {
+  margin: 10px 0 0;
+  color: var(--ink-muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.landing-page .feature .tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+/* ---------- philosophy ---------- */
+
+.landing-page .philosophy {
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.landing-page .philosophy-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.landing-page .philosophy blockquote {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(1.3rem, 2.4vw, 1.7rem);
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.landing-page .philosophy-detail p {
+  color: var(--ink-muted);
+  font-size: 0.96rem;
+  line-height: 1.7;
+  margin: 0 0 16px;
+}
+.landing-page .philosophy-detail p:last-child { margin-bottom: 0; }
+
+.landing-page .inline-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.landing-page .inline-link:hover { border-color: var(--accent); }
+
+/* ---------- how it works ---------- */
+
+.landing-page .steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+
+.landing-page .step {
+  padding-top: 18px;
+  border-top: 2px solid var(--line-strong);
+}
+
+.landing-page .step .num {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1.6rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.landing-page .step h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  margin-top: 10px;
+}
+
+.landing-page .step p {
+  margin: 8px 0 0;
+  color: var(--ink-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* ---------- open source ---------- */
+
+.landing-page .oss {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 40px;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 40px 44px;
+}
+
+.landing-page .oss h2 { font-size: clamp(1.3rem, 2.2vw, 1.7rem); }
+.landing-page .oss p { color: var(--ink-muted); margin: 12px 0 0; max-width: 46ch; }
+
+.landing-page .stack-line {
+  margin-top: 18px;
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+}
+.landing-page .stack-line .mono { color: var(--ink-muted); }
+
+.landing-page .oss-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ---------- final cta ---------- */
+
+.landing-page .final-cta {
+  text-align: center;
+  padding: 88px 0 96px;
+}
+
+.landing-page .final-cta h2 {
+  font-size: clamp(1.8rem, 3.4vw, 2.5rem);
+}
+
+.landing-page .final-cta p {
+  margin: 16px auto 0;
+  max-width: 42ch;
+  color: var(--ink-muted);
+}
+
+.landing-page .final-cta .hero-actions { justify-content: center; margin-top: 30px; }
+.landing-page .final-cta .hero-note { text-align: center; }
+
+/* ---------- footer ---------- */
+
+.landing-page footer {
+  border-top: 1px solid var(--line);
+  padding: 28px 0 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+.landing-page footer a { text-decoration: none; color: var(--ink-muted); }
+.landing-page footer a:hover { color: var(--ink); }
+.landing-page .footer-links { display: flex; gap: 20px; }
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 860px) {
+  .landing-page .hero { grid-template-columns: 1fr; padding: 40px 0 56px; gap: 40px; }
+  .landing-page .feature-grid { grid-template-columns: 1fr; }
+  .landing-page .philosophy-grid { grid-template-columns: 1fr; gap: 28px; }
+  .landing-page .steps { grid-template-columns: 1fr; gap: 24px; }
+  .landing-page .oss { grid-template-columns: 1fr; text-align: left; padding: 32px 26px; }
+  .landing-page .nav-links { gap: 16px; }
+  .landing-page .nav-links .nav-anchor { display: none; }
+  .landing-page section { padding: 52px 0; }
+  .landing-page footer { flex-direction: column; gap: 14px; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .landing-page .ledger-row { grid-template-columns: 1fr auto; }
+  .landing-page .ledger-row .date { grid-column: 1 / -1; order: -1; }
+}
