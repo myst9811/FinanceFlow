@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { pinoHttp } from 'pino-http';
 import * as Sentry from '@sentry/node';
@@ -11,6 +12,7 @@ import accountRoutes from './routes/account.routes';
 import transactionRoutes from './routes/transaction.routes';
 import goalRoutes from './routes/goal.routes';
 import insightRoutes from './routes/insight.routes';
+import adminRoutes from './routes/admin.routes';
 import { healthCheck } from './controllers/health.controller';
 import { notFoundHandler, errorHandler } from './middleware/error.middleware';
 
@@ -49,6 +51,12 @@ app.use(cors({
 
     callback(new Error('Not allowed by CORS'));
   },
+  // Required for the admin panel's httpOnly session cookie - without this,
+  // browsers won't send or accept cookies on cross-origin requests at all,
+  // regardless of the cookie's own SameSite/Secure settings. The regular
+  // consumer API doesn't use cookies (Bearer tokens instead), so this has
+  // no effect on it.
+  credentials: true,
 }));
 
 app.use(pinoHttp({
@@ -70,6 +78,8 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
+app.use(cookieParser());
+
 // Health check
 
 app.get('/health', healthCheck);
@@ -81,6 +91,8 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/goals', goalRoutes);
 
 app.use('/api/insights', insightRoutes);
+
+app.use('/api/admin', adminRoutes);
 
 // 404 + error handling middleware
 
