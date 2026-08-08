@@ -139,7 +139,12 @@
   align-items: center;
   text-decoration: none;
 }
-.landing-page .wordmark img {
+.landing-page .logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.landing-page .logo-mark svg {
   height: 34px;
   width: auto;
   display: block;

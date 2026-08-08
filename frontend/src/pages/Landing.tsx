@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import AnimatedLogoMark from '../components/landing/AnimatedLogoMark';
 import './Landing.css';
 
 const Landing = () => {
@@ -6,7 +7,7 @@ const Landing = () => {
     <div className="landing-page">
       <header className="site-header wrap">
         <Link className="wordmark" to="/" aria-label="ChronosFin home">
-          <img src="/chronosfin-logo.svg" alt="ChronosFin" />
+          <AnimatedLogoMark />
         </Link>
         <nav className="nav-links">
           <a className="nav-anchor" href="#how">How it works</a>
