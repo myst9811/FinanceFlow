@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAdminAuth } from '../../hooks/useAdminAuth';
 
@@ -9,6 +9,16 @@ const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
 
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { admin, logout } = useAdminAuth();
+  const [signOutError, setSignOutError] = useState<string | null>(null);
+
+  const handleSignOut = async () => {
+    setSignOutError(null);
+    try {
+      await logout();
+    } catch {
+      setSignOutError('Sign out failed. Please try again.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -28,9 +38,10 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {signOutError && <span className="text-sm text-red-400">{signOutError}</span>}
             <span className="text-sm text-gray-500">{admin?.email}</span>
             <button
-              onClick={() => logout()}
+              onClick={handleSignOut}
               className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-white"
             >
               Sign out

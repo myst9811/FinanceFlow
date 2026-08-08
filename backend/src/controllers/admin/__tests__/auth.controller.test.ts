@@ -88,6 +88,13 @@ describe('googleLogin', () => {
 
     await expect(googleLogin(req, res)).rejects.toMatchObject({ statusCode: 400 });
   });
+
+  it('rejects with 400 instead of throwing when req.body is undefined', async () => {
+    const req = {} as unknown as Request;
+    const res = createMockRes();
+
+    await expect(googleLogin(req, res)).rejects.toMatchObject({ statusCode: 400, message: 'Missing credential' });
+  });
 });
 
 describe('logout', () => {

@@ -10,7 +10,7 @@ const AdminUsers = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
 
   const loadUsers = async (targetPage: number) => {
     setLoading(true);
@@ -32,14 +32,19 @@ const AdminUsers = () => {
   }, []);
 
   const handleToggleActive = async (user: AdminUserListItem) => {
-    setPendingId(user.id);
+    const targetIsActive = !user.isActive;
+    setPendingIds((prev) => new Set(prev).add(user.id));
     try {
-      await adminService.updateUserStatus(user.id, !user.isActive);
-      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, isActive: !u.isActive } : u)));
+      await adminService.updateUserStatus(user.id, targetIsActive);
+      setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, isActive: targetIsActive } : u)));
     } catch {
       setError(`Failed to update ${user.email}.`);
     } finally {
-      setPendingId(null);
+      setPendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(user.id);
+        return next;
+      });
     }
   };
 
@@ -102,7 +107,7 @@ const AdminUsers = () => {
                   <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
                     <button
                       onClick={() => handleToggleActive(user)}
-                      disabled={pendingId === user.id}
+                      disabled={pendingIds.has(user.id)}
                       className="font-medium text-primary-500 hover:text-primary-600 disabled:opacity-50"
                     >
                       {user.isActive ? 'Deactivate' : 'Reactivate'}

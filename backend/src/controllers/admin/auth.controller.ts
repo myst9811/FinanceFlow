@@ -14,7 +14,7 @@ const baseCookieOptions: CookieOptions = {
 };
 
 export const googleLogin = async (req: Request, res: Response): Promise<void> => {
-  const { credential } = req.body;
+  const credential = req.body?.credential;
 
   if (!credential) {
     throw new ApiError(400, 'Missing credential');

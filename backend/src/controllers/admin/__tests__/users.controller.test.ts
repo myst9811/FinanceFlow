@@ -68,7 +68,10 @@ describe('getUsers', () => {
     const userB = await createTestUser();
     const userC = await createTestUser();
 
-    // Page 1 of 2: the two most recently created users (desc order), i.e. userC then userB.
+    // Page 1 of 2: the two most recently created users (desc order), i.e. userC and userB.
+    // createdAt has limited precision, so userB and userC may tie; the query
+    // breaks ties with a secondary `id desc` sort, but we don't assert which
+    // of the two lands first, only that both are on page 1 (not page 2).
     const page1Req = { query: { page: '1', limit: '2' } } as unknown as AdminRequest;
     const page1Res = createMockRes();
     await getUsers(page1Req, page1Res);
@@ -77,8 +80,9 @@ describe('getUsers', () => {
     expect(page1Body.users).toHaveLength(2);
     expect(page1Body.page).toBe(1);
     expect(page1Body.limit).toBe(2);
-    expect(page1Body.users[0].id).toBe(userC.id);
-    expect(page1Body.users[1].id).toBe(userB.id);
+    const page1Ids = page1Body.users.map((u: any) => u.id);
+    expect(page1Ids).toContain(userC.id);
+    expect(page1Ids).toContain(userB.id);
 
     // Page 2 with the same limit must not repeat page 1's users, and must
     // eventually include the oldest of our three test users.

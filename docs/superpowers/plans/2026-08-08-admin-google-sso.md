@@ -150,7 +150,7 @@ ADMIN_EMAIL=admin-test@example.com
 
 - [ ] **Step 3: Sync local env files (not committed)**
 
-Copy the same three vars into local `backend/.env` and `backend/.env.test` (both gitignored). For `backend/.env`, use the real admin email (`ADMIN_EMAIL=shannen.saikia@gmail.com`) and a real random `ADMIN_JWT_SECRET` (e.g. `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`); `GOOGLE_CLIENT_ID` can stay a placeholder until Task 15 (the real Google Cloud Console credential isn't needed for any backend test — they mock `verifyGoogleIdToken` — only for a real end-to-end browser sign-in). For `backend/.env.test`, copy the `.env.test.example` values verbatim.
+Copy the same three vars into local `backend/.env` and `backend/.env.test` (both gitignored). For `backend/.env`, set `ADMIN_EMAIL` to the Google account you want to allowlist for admin access, and use a real random `ADMIN_JWT_SECRET` (e.g. `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`); `GOOGLE_CLIENT_ID` can stay a placeholder until Task 15 (the real Google Cloud Console credential isn't needed for any backend test — they mock `verifyGoogleIdToken` — only for a real end-to-end browser sign-in). For `backend/.env.test`, copy the `.env.test.example` values verbatim.
 
 - [ ] **Step 4: Verify the app still boots**
 

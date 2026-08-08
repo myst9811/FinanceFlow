@@ -22,7 +22,7 @@ export const getUsers = async (req: AdminRequest, res: Response): Promise<void> 
   const [users, totalCount] = await Promise.all([
     prisma.user.findMany({
       select: USER_LIST_SELECT,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       skip: pagination.skip,
       take: pagination.limit,
     }),
