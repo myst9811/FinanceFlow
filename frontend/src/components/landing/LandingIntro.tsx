@@ -30,8 +30,8 @@ const LandingIntro = ({ playing, onFinish }: LandingIntroProps) => {
           <circle className="lm-ring" cx="92" cy="92" r="71" stroke="#6173A8" strokeOpacity=".45" strokeWidth="2" strokeDasharray="2 9" />
           <path className="lm-hand" d="M92 92V48M92 92L124 112" stroke="#DDE7FF" strokeWidth="7" strokeLinecap="round" />
           <circle className="lm-dot" cx="92" cy="92" r="7" fill="#65E6B4" />
-          <path className="lm-chart" d="M43 142L70 116L91 127L139 73" stroke="url(#li-spark)" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" />
-          <path className="lm-arrow" d="M121 73H139V91" stroke="#A8F5D5" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+          <path className="lm-chart" d="M45 140L82 108L140 72" stroke="url(#li-spark)" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" />
+          <path className="lm-arrow" d="M128 90L140 72L118 75" stroke="#A8F5D5" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
           <path className="lm-tick-1" d="M92 8V18" stroke="#A8F5D5" strokeWidth="5" strokeLinecap="round" opacity=".9" />
           <path className="lm-tick-2" d="M176 92H166" stroke="#A8F5D5" strokeWidth="5" strokeLinecap="round" opacity=".9" />
           <path className="lm-tick-3" d="M92 176V166" stroke="#A8F5D5" strokeWidth="5" strokeLinecap="round" opacity=".9" />

@@ -14,8 +14,8 @@
     <circle cx="92" cy="92" r="71" stroke="#6173A8" stroke-opacity=".45" stroke-width="2" stroke-dasharray="2 9"/>
     <path d="M92 92V48M92 92L124 112" stroke="#DDE7FF" stroke-width="7" stroke-linecap="round"/>
     <circle cx="92" cy="92" r="7" fill="#65E6B4"/>
-    <path d="M43 142L70 116L91 127L139 73" stroke="url(#spark)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M121 73H139V91" stroke="#A8F5D5" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M45 140L82 108L140 72" stroke="url(#spark)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M128 90L140 72L118 75" stroke="#A8F5D5" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M92 8V18M176 92H166M92 176V166M8 92H18" stroke="#A8F5D5" stroke-width="5" stroke-linecap="round" opacity=".9"/>
   </g>
 </svg>
