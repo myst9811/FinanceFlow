@@ -71,11 +71,25 @@ res.cookie('admin_session', token, {
 
   `sameSite: 'none'` is required because `chronosfin-web.vercel.app` (or the custom domain) and `chronosfin-api.vercel.app` are different origins — `Strict`/`Lax` cookies are never sent on cross-site requests at all, which would silently break the entire mechanism. This is the deliberate tradeoff mentioned in the design discussion: `SameSite=None` forfeits the CSRF protection `Strict` gives for free, so CSRF protection is added explicitly instead (next section) rather than relied on implicitly.
 
+  **Cross-site cookie reliability across browsers is a genuine open question I couldn't fully resolve from documentation** (WebKit's own docs frame ITP around third-party *embedded* contexts, which wouldn't apply here; MDN's literal definition of "third-party cookie" is any domain mismatch, which would). Decision: ship as designed and verify empirically in the browser(s) actually used for admin access, rather than preemptively restructuring the deploy topology (e.g. same-origin via Vercel Rewrites) for a risk that isn't confirmed to apply to this setup. If real-browser testing during implementation shows the cookie isn't reliably sent/accepted, the fallback is exactly that same-origin restructuring — noted here so it's not a surprise if needed, not adopted preemptively.
+
+  The actual `jwt.sign()` call, shown explicitly here (not left implicit) precisely because leaving it implicit is itself a real footgun — a `jwt.sign()` call *without* `expiresIn` produces a token that's cryptographically valid forever, with expiration enforced only by the browser honoring the cookie's `maxAge` (which anything with the raw token string, bypassing the cookie mechanism entirely, would ignore):
+
+  ```typescript
+  const token = jwt.sign({ email: payload.email }, config.adminJwtSecret, { expiresIn: '1h' });
+  res.cookie('admin_session', token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+    maxAge: 60 * 60 * 1000,
+  });
+  ```
+
   This also requires one small change to the *existing* CORS setup in `server.ts`: `cors({ origin: (origin, callback) => {...} })` needs `credentials: true` added to that options object. Without it, the browser won't accept or send cross-origin cookies at all, regardless of `SameSite`/`Secure` — this isn't specific to the admin feature, it's a general browser requirement for any credentialed cross-origin request. The existing origin-matching logic (reflecting back the specific requesting origin rather than `*`) already satisfies the other prerequisite for credentialed CORS, so this is a one-line addition, not a redesign.
 - `logout(req, res)`: `res.clearCookie('admin_session', ...)` with matching options.
 - `me(req, res)`: returns `{ email: req.admin.email }` — requires `requireAdmin` middleware (below) to have already populated `req.admin`.
 
-**Explicit CSRF mitigation** — new `backend/src/middleware/csrf.middleware.ts`, applied only to admin routes that change state (not `GET`s):
+**Explicit CSRF mitigation** — new `backend/src/middleware/csrf.middleware.ts`, applied to **every** admin route, not just the state-changing ones:
 
 ```typescript
 import { Request, Response, NextFunction } from 'express';
@@ -91,7 +105,9 @@ export function requireTrustedOrigin(req: Request, res: Response, next: NextFunc
 }
 ```
 
-Rejects any state-changing admin request whose `Origin` header isn't exactly one of the configured trusted frontend origins — a forged cross-site request (the classic CSRF scenario: a malicious page making the browser submit the admin's cookie automatically) won't carry a trusted `Origin`, since browsers set `Origin` based on the page making the request, not something a forging site can spoof.
+Rejects any admin request whose `Origin` header isn't exactly one of the configured trusted frontend origins — a forged cross-site request (the classic CSRF scenario: a malicious page making the browser submit the admin's cookie automatically) won't carry a trusted `Origin`, since browsers set `Origin` based on the page making the request, not something a forging site can spoof.
+
+**Why every route, not just mutations, and why this doesn't require touching the existing CORS wildcard:** `server.ts`'s main CORS middleware allows any `*.vercel.app` origin (a deliberate, pre-existing choice for the *consumer* app's own preview deployments, which don't use cookies, so a permissive origin check there doesn't expose credentialed actions the way it would here). Originally this middleware was only applied to the two mutating routes (`logout`, `updateUserStatus`), reasoning that `GET`s are read-only. That reasoning has a gap: since the main CORS middleware's wildcard would let an attacker-controlled `*.vercel.app` page's JS *read* a credentialed response (not just cause a side effect), an unprotected `GET /api/admin/stats`/`users` would leak that data to such a page, even though it can't cause any state change. Applying `requireTrustedOrigin` to the whole `/api/admin` router (including `GET`s and `/auth/google`) closes this precisely, without weakening the existing consumer-app CORS policy that serves a different, legitimate purpose.
 
 ## Backend: `requireAdmin` middleware
 
@@ -114,6 +130,10 @@ export function requireAdmin(req: AdminRequest, res: Response, next: NextFunctio
   }
   try {
     const payload = jwt.verify(token, config.adminJwtSecret) as { email: string };
+    if (payload.email.toLowerCase() !== config.adminEmail.toLowerCase()) {
+      res.status(401).json({ error: 'Not authenticated' });
+      return;
+    }
     req.admin = { email: payload.email };
     next();
   } catch {
@@ -122,20 +142,24 @@ export function requireAdmin(req: AdminRequest, res: Response, next: NextFunctio
 }
 ```
 
+The explicit re-check against `config.adminEmail` (not just "is this a validly-signed token") matters for one specific scenario: if `ADMIN_EMAIL` is ever rotated — most plausibly *because* the previous admin email/Google account was compromised — any already-issued token for the old email stays cryptographically valid until its own expiry regardless of the rotation. Re-checking on every request means rotating the env var revokes existing sessions immediately, not just new ones.
+
 Requires the `cookie-parser` middleware (new dependency — `req.cookies` isn't populated by Express by default) added once in `server.ts`, before routes.
 
 ## Backend: admin routes
 
-New `backend/src/routes/admin.routes.ts`, mounted at `/api/admin`:
+New `backend/src/routes/admin.routes.ts`, mounted at `/api/admin`. `requireTrustedOrigin` applies to the whole router (see the CSRF section above for why it now covers reads too, not just mutations):
 
 ```typescript
+router.use(requireTrustedOrigin);
+
 router.post('/auth/google', googleAuthLimiter, googleLogin);
-router.post('/auth/logout', requireAdmin, requireTrustedOrigin, logout);
+router.post('/auth/logout', requireAdmin, logout);
 router.get('/auth/me', requireAdmin, me);
 
 router.get('/stats', requireAdmin, getStats);
 router.get('/users', requireAdmin, getUsers);
-router.patch('/users/:id/status', requireAdmin, requireTrustedOrigin, updateUserStatus);
+router.patch('/users/:id/status', requireAdmin, updateUserStatus);
 ```
 
 `googleAuthLimiter` (new, in `middleware/rateLimit.middleware.ts` alongside the existing login/register limiters): 10/15min/IP — this endpoint can't be brute-forced the way a password can (an attacker would need a valid Google-signed token for the exact admin email, i.e. would need to already control that Google account), but it still triggers a real cryptographic verification per call and shouldn't be floodable.
@@ -187,11 +211,12 @@ New `frontend/src/pages/admin/AdminDashboard.tsx` (stat cards: user/account/tran
 - Multiple admins / a real admin-user table — one hardcoded allowlisted email, matching what was asked for.
 - Viewing any individual user's actual financial data — deliberately excluded per the scope discussion, not a gap.
 - The general lack of a Content-Security-Policy on the frontend (it currently has none at all, unlike the backend's helmet-set CSP) — a real, separate hardening item, tracked as a new addition to `docs/PRODUCTION_READINESS.md` rather than folded into this task's scope. (A `Cross-Origin-Opener-Policy` fix was considered during design and dropped once verified unnecessary — COOP only applies to navigable documents/windows, and the backend's helmet-set COOP header, the only COOP in this app today, applies solely to API JSON responses, not to the frontend page hosting the sign-in button, which has no COOP header at all.)
+- A cryptographic nonce on the Google ID token exchange, to protect against a token being replayed if intercepted in transit. Considered and deferred: the whole exchange is already over TLS (the same baseline every other credential in this app relies on, including the regular password login, which has no equivalent nonce either), and adding one means generating, threading through Google's `initialize()` config, and server-side-verifying a per-attempt value for a marginal improvement over what TLS already covers. Worth revisiting only if a concrete threat model emerges that TLS doesn't already address.
 
 ## Testing
 
-- `backend/src/controllers/admin/__tests__/auth.controller.test.ts`: mocks `verifyGoogleIdToken` (`vi.spyOn` on the module, matching the established pattern of mocking only the one external-boundary call that can't reasonably run against the real thing) to return controlled payloads — valid admin email → cookie set with correct options; valid token but non-admin email → `403`; `email_verified: false` → `403`; thrown error (invalid token) → `403`, same message as the wrong-email case.
-- `backend/src/middleware/__tests__/adminAuth.middleware.test.ts`: valid signed cookie → `req.admin` populated, `next()` called; missing cookie → `401`; cookie signed with a different secret → `401`.
+- `backend/src/controllers/admin/__tests__/auth.controller.test.ts`: mocks `verifyGoogleIdToken` (`vi.spyOn` on the module, matching the established pattern of mocking only the one external-boundary call that can't reasonably run against the real thing) to return controlled payloads — valid admin email → cookie set with correct options (`httpOnly`, `secure`, `sameSite: 'none'`) *and* the signed token itself decodes with an `exp` claim consistent with the 1-hour lifetime (guards against a future edit accidentally dropping `expiresIn`, not just checking the cookie's own `maxAge`); valid token but non-admin email → `403`; `email_verified: false` → `403`; thrown error (invalid token) → `403`, same message as the wrong-email case.
+- `backend/src/middleware/__tests__/adminAuth.middleware.test.ts`: valid signed cookie → `req.admin` populated, `next()` called; missing cookie → `401`; cookie signed with a different secret → `401`; validly-signed cookie whose email no longer matches `config.adminEmail` (simulating post-rotation) → `401`.
 - `backend/src/middleware/__tests__/csrf.middleware.test.ts`: trusted `Origin` → `next()`; missing/untrusted `Origin` → `403`.
 - `backend/src/controllers/admin/__tests__/users.controller.test.ts`: real test DB (matching this repo's convention) — pagination behavior (same shape as the existing `pagination.test.ts` coverage), `updateUserStatus` actually flips `isActive`, and a deactivated user's subsequent login attempt gets `403`.
 
