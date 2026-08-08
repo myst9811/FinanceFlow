@@ -1,10 +1,16 @@
 import { Link } from 'react-router-dom';
 import AnimatedLogoMark from '../components/landing/AnimatedLogoMark';
+import LandingIntro from '../components/landing/LandingIntro';
+import { useLandingIntro } from '../components/landing/useLandingIntro';
 import './Landing.css';
 
 const Landing = () => {
+  const { playing, finish } = useLandingIntro();
+
   return (
     <div className="landing-page">
+      <LandingIntro playing={playing} onFinish={finish} />
+      <div inert={playing}>
       <header className="site-header wrap">
         <Link className="wordmark" to="/" aria-label="ChronosFin home">
           <AnimatedLogoMark />
@@ -174,6 +180,7 @@ const Landing = () => {
           <Link to="/login">Log in</Link>
         </span>
       </footer>
+      </div>
     </div>
   );
 };
