@@ -40,4 +40,22 @@ describe('healthCheck', () => {
     expect(body.status).toBe('ERROR');
     expect(body.error).toBe('Database unreachable');
   });
+
+  it('returns 503 if the database query hangs past the timeout', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(prisma, '$queryRaw').mockImplementationOnce(() => new Promise(() => {}));
+
+    const req = {} as unknown as Request;
+    const res = createMockRes();
+
+    const resultPromise = healthCheck(req, res);
+    await vi.advanceTimersByTimeAsync(3000);
+    await resultPromise;
+
+    expect(res.status).toHaveBeenCalledWith(503);
+    const body = (res.json as any).mock.calls[0][0];
+    expect(body.error).toBe('Database unreachable');
+
+    vi.useRealTimers();
+  });
 });
