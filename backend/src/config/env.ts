@@ -9,6 +9,9 @@ export interface AppConfig {
   jwtExpiresIn: string;
   corsOrigins: string[];
   sentryDsn?: string;
+  googleClientId: string;
+  adminJwtSecret: string;
+  adminEmail: string;
 }
 
 function required(name: string): string {
@@ -35,6 +38,9 @@ function loadConfig(): AppConfig {
       .map((origin) => origin.trim())
       .filter(Boolean),
     sentryDsn: process.env.SENTRY_DSN,
+    googleClientId: required('GOOGLE_CLIENT_ID'),
+    adminJwtSecret: required('ADMIN_JWT_SECRET'),
+    adminEmail: required('ADMIN_EMAIL'),
   };
 }
 
