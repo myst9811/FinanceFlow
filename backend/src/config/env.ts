@@ -8,6 +8,7 @@ export interface AppConfig {
   jwtSecret: string;
   jwtExpiresIn: string;
   corsOrigins: string[];
+  sentryDsn?: string;
 }
 
 function required(name: string): string {
@@ -33,6 +34,7 @@ function loadConfig(): AppConfig {
       .split(',')
       .map((origin) => origin.trim())
       .filter(Boolean),
+    sentryDsn: process.env.SENTRY_DSN,
   };
 }
 
