@@ -60,7 +60,7 @@ const Header = () => {
                 <span className="text-white font-bold text-xl">F</span>
               </div>
               <span className="ml-3 text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                FinanceFlow
+                ChronosFin
               </span>
             </div>
           </div>

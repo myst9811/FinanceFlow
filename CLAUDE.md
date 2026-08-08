@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-FinanceFlow is a personal finance management app: an Express/Prisma/PostgreSQL API backend and a React/Vite frontend, run as two independent apps in one repo (no shared workspace tooling).
+ChronosFin is a personal finance management app: an Express/Prisma/PostgreSQL API backend and a React/Vite frontend, run as two independent apps in one repo (no shared workspace tooling).
 
 ## Commands
 
@@ -30,12 +30,12 @@ Run a single backend test file: `cd backend && npx vitest run src/services/__tes
 
 ### Backend test database
 
-Backend tests hit a real Postgres database (`financeflow_test`), not mocks — see `backend/src/services/__tests__/goal.service.test.ts` for the pattern (create fixtures in `beforeEach`, clean up in `afterEach`). One-time setup:
+Backend tests hit a real Postgres database (`chronosfin_test`), not mocks — see `backend/src/services/__tests__/goal.service.test.ts` for the pattern (create fixtures in `beforeEach`, clean up in `afterEach`). One-time setup:
 
 ```bash
 cp backend/.env.test.example backend/.env.test
-docker exec financeflow-db-1 createdb -U financeflow financeflow_test
-cd backend && DATABASE_URL="postgresql://financeflow:financeflow@localhost:5432/financeflow_test?schema=public" npx prisma migrate deploy
+docker exec chronosfin-db-1 createdb -U chronosfin chronosfin_test
+cd backend && DATABASE_URL="postgresql://chronosfin:chronosfin@localhost:5433/chronosfin_test?schema=public" npx prisma migrate deploy
 ```
 
 `backend/src/test/setup.ts` loads `.env.test` before `config/env.ts` reads `process.env`, which is what redirects tests at the test DB instead of dev. `vitest.config.ts` sets `fileParallelism: false` — tests share one DB and are not safe to parallelize across files.

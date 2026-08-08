@@ -1,8 +1,8 @@
 {
-  "name": "financeflow",
+  "name": "chronosfin",
   "private": true,
   "version": "1.0.0",
-  "description": "Convenience scripts for running the FinanceFlow backend and frontend together",
+  "description": "Convenience scripts for running the ChronosFin backend and frontend together",
   "scripts": {
     "install:all": "npm --prefix backend ci && npm --prefix frontend ci",
     "db:up": "docker compose up -d db",

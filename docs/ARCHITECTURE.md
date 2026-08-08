@@ -1,6 +1,6 @@
 # Architecture Overview
 
-FinanceFlow is two independent apps in one repo — an Express/Prisma/PostgreSQL API and a React/Vite frontend — with no shared build tooling between them (see the root `package.json`'s `npm --prefix` convenience scripts).
+ChronosFin is two independent apps in one repo — an Express/Prisma/PostgreSQL API and a React/Vite frontend — with no shared build tooling between them (see the root `package.json`'s `npm --prefix` convenience scripts).
 
 ## Backend (`backend/src`)
 

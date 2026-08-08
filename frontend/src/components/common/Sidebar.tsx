@@ -44,7 +44,7 @@ const Sidebar: React.FC = () => {
         fixed inset-y-0 left-0 z-40 w-64
       `}>
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-primary-600">FinanceFlow</h1>
+          <h1 className="text-2xl font-bold text-primary-600">ChronosFin</h1>
         </div>
         <nav className="mt-6">
           {navigation.map((item) => (

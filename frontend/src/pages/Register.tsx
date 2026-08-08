@@ -32,7 +32,7 @@ const Register = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="card w-full max-w-sm">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Create your FinanceFlow account</h1>
+        <h1 className="mb-6 text-2xl font-bold text-gray-900">Create your ChronosFin account</h1>
 
         {error && (
           <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>

@@ -1,15 +1,17 @@
+name: chronosfin
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: financeflow
-      POSTGRES_PASSWORD: financeflow
-      POSTGRES_DB: financeflow
+      POSTGRES_USER: chronosfin
+      POSTGRES_PASSWORD: chronosfin
+      POSTGRES_DB: chronosfin
     ports:
       - "5433:5432"
     volumes:
-      - financeflow-db-data:/var/lib/postgresql/data
+      - chronosfin-db-data:/var/lib/postgresql/data
 
 volumes:
-  financeflow-db-data:
+  chronosfin-db-data:

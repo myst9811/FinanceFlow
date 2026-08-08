@@ -1,4 +1,4 @@
-# FinanceFlow - Personal Finance Analytics Engine
+# ChronosFin - Personal Finance Analytics Engine
 
 A personal finance management system with manual account/transaction tracking, goal budgeting, and rule-based spending insights.
 

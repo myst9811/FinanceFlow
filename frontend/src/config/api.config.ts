@@ -3,4 +3,4 @@ export const API_CONFIG = {
   timeout: 10000,
 };
 
-export const AUTH_TOKEN_KEY = 'financeflow_auth_token';
+export const AUTH_TOKEN_KEY = 'chronosfin_auth_token';
