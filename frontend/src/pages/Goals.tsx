@@ -121,13 +121,13 @@ const Goals = () => {
   };
 
   if (loading) {
-    return <p className="text-gray-500">Loading goals...</p>;
+    return <p className="text-ink-muted">Loading goals...</p>;
   }
 
   if (error) {
     return (
       <div className="card space-y-3">
-        <p className="text-red-700">{error}</p>
+        <p className="text-danger">{error}</p>
         <button
           onClick={() => {
             setLoading(true);
@@ -144,7 +144,7 @@ const Goals = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Goals</h1>
+        <h1 className="text-2xl font-bold text-ink">Goals</h1>
         {!formMode && (
           <button onClick={handleCreate} className="btn-primary">
             Add Goal
@@ -159,7 +159,7 @@ const Goals = () => {
       </div>
 
       {actionError && (
-        <div className="flex items-center justify-between rounded-md bg-red-50 p-3 text-sm text-red-700">
+        <div className="flex items-center justify-between rounded-md bg-danger/10 p-3 text-sm text-danger">
           <span>{actionError}</span>
           <button onClick={() => setActionError(null)} className="font-medium underline">
             Dismiss
@@ -181,7 +181,7 @@ const Goals = () => {
       )}
 
       <div className="space-y-4">
-        {goals.length === 0 && <p className="text-gray-500">No goals yet. Add one to get started.</p>}
+        {goals.length === 0 && <p className="text-ink-muted">No goals yet. Add one to get started.</p>}
         {goals.map((goal) => (
           <GoalCard
             key={goal.id}

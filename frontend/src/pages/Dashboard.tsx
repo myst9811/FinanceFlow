@@ -29,8 +29,8 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Welcome back! Here's your financial overview.</p>
+        <h1 className="text-2xl font-bold text-ink">Dashboard</h1>
+        <p className="text-ink-muted mt-1">Welcome back! Here's your financial overview.</p>
       </div>
 
       {/* Stats Grid */}
@@ -68,15 +68,15 @@ const Dashboard: React.FC = () => {
       {/* Charts Row - Placeholder for future charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Spending by Category</h3>
-          <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">Chart coming soon...</p>
+          <h3 className="text-lg font-semibold text-ink mb-4">Spending by Category</h3>
+          <div className="flex items-center justify-center h-64 bg-surface rounded-lg">
+            <p className="text-ink-muted">Chart coming soon...</p>
           </div>
         </div>
         <div className="card">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Income vs Expenses</h3>
-          <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
-            <p className="text-gray-500">Chart coming soon...</p>
+          <h3 className="text-lg font-semibold text-ink mb-4">Income vs Expenses</h3>
+          <div className="flex items-center justify-center h-64 bg-surface rounded-lg">
+            <p className="text-ink-muted">Chart coming soon...</p>
           </div>
         </div>
       </div>
@@ -86,7 +86,7 @@ const Dashboard: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <h3 className="text-lg font-semibold text-ink mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button className="btn-primary">
             Add Transaction

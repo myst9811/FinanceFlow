@@ -87,13 +87,13 @@ const Transactions = () => {
   };
 
   if (loading) {
-    return <p className="text-gray-500">Loading transactions...</p>;
+    return <p className="text-ink-muted">Loading transactions...</p>;
   }
 
   if (error) {
     return (
       <div className="card space-y-3">
-        <p className="text-red-700">{error}</p>
+        <p className="text-danger">{error}</p>
         <button
           onClick={() => {
             setLoading(true);
@@ -110,11 +110,11 @@ const Transactions = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
+        <h1 className="text-2xl font-bold text-ink">Transactions</h1>
         {!formMode && (
           <div className="flex items-center gap-3">
             {accounts.length === 0 && (
-              <span className="text-sm text-gray-500">Create an account first</span>
+              <span className="text-sm text-ink-muted">Create an account first</span>
             )}
             <button
               onClick={handleCreate}
@@ -132,7 +132,7 @@ const Transactions = () => {
           <select
             value={accountFilter}
             onChange={(e) => setAccountFilter(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-md border border-line bg-surface px-3 py-2 text-sm"
           >
             <option value="">All Accounts</option>
             {accounts.map((a) => (
@@ -145,7 +145,7 @@ const Transactions = () => {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-md border border-line bg-surface px-3 py-2 text-sm"
           >
             <option value="">All Types</option>
             <option value={TransactionType.INCOME}>Income</option>
@@ -170,7 +170,7 @@ const Transactions = () => {
       )}
 
       <div className="space-y-4">
-        {transactions.length === 0 && <p className="text-gray-500">No transactions yet.</p>}
+        {transactions.length === 0 && <p className="text-ink-muted">No transactions yet.</p>}
         {transactions.map((transaction) => (
           <TransactionRow
             key={transaction.id}

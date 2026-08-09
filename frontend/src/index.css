@@ -3,21 +3,61 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --surface: 13 17 23;
+    --surface-2: 22 27 34;
+    --ink: 230 237 243;
+    --ink-muted: 139 148 158;
+    --line: 48 54 61;
+    --accent: 45 189 139;
+    --accent-glow: 45 189 139;
+  }
+
+  .light {
+    --surface: 255 255 255;
+    --surface-2: 249 250 251;
+    --ink: 17 24 39;
+    --ink-muted: 107 114 128;
+    --line: 229 231 235;
+    --accent: 37 99 235;
+    --accent-glow: 37 99 235;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-surface text-ink;
   }
 }
 
 @layer components {
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6;
+    @apply bg-surface-2 rounded-lg shadow-sm border border-line p-6;
   }
-  
+
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-accent hover:opacity-90 text-white px-4 py-2 rounded-lg font-medium transition-colors;
   }
-  
+
   .btn-secondary {
-    @apply bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors;
+    @apply bg-surface-2 hover:bg-line text-ink border border-line px-4 py-2 rounded-lg font-medium transition-colors;
+  }
+
+  .app-grid-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-color: rgb(var(--surface));
+    background-image:
+      linear-gradient(to right, rgb(var(--line) / 0.4) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(var(--line) / 0.4) 1px, transparent 1px),
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgb(var(--accent-glow) / 0.15), transparent);
+    background-size: 40px 40px, 40px 40px, 100% 100%;
+  }
+
+  .light .app-grid-bg {
+    background-image:
+      linear-gradient(to right, rgb(var(--line) / 0.6) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(var(--line) / 0.6) 1px, transparent 1px),
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgb(var(--accent-glow) / 0.08), transparent);
   }
 }

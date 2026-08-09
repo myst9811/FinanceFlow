@@ -42,18 +42,19 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="relative flex min-h-screen items-center justify-center">
+      <div className="app-grid-bg" />
       <div className="card w-full max-w-sm">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Create your ChronosFin account</h1>
+        <h1 className="mb-6 text-2xl font-bold text-ink">Create your ChronosFin account</h1>
 
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+          <div className="mb-4 rounded-md bg-danger/10 p-3 text-sm text-danger">{error}</div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="firstName" className="block text-sm font-medium text-ink">
                 First name
               </label>
               <input
@@ -62,12 +63,12 @@ const Register = () => {
                 required
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
               />
             </div>
 
             <div>
-              <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="lastName" className="block text-sm font-medium text-ink">
                 Last name
               </label>
               <input
@@ -76,13 +77,13 @@ const Register = () => {
                 required
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+                className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-ink">
               Email
             </label>
             <input
@@ -91,12 +92,12 @@ const Register = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="block text-sm font-medium text-ink">
               Password
             </label>
             <input
@@ -105,9 +106,9 @@ const Register = () => {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+              className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-ink-muted">
               At least 8 characters, with an uppercase letter, a lowercase letter, and a number.
             </p>
           </div>
@@ -117,17 +118,17 @@ const Register = () => {
           </button>
         </form>
 
-        <div className="my-4 flex items-center gap-3 text-xs text-gray-400">
-          <div className="h-px flex-1 bg-gray-200" />
+        <div className="my-4 flex items-center gap-3 text-xs text-ink-muted">
+          <div className="h-px flex-1 bg-line" />
           OR
-          <div className="h-px flex-1 bg-gray-200" />
+          <div className="h-px flex-1 bg-line" />
         </div>
 
         <GoogleSignInButton onCredential={handleGoogleCredential} />
 
-        <p className="mt-4 text-center text-sm text-gray-600">
+        <p className="mt-4 text-center text-sm text-ink-muted">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-primary-600 hover:text-primary-700">
+          <Link to="/login" className="font-medium text-accent hover:opacity-80">
             Sign in
           </Link>
         </p>

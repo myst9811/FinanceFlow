@@ -52,12 +52,12 @@ const GoalCard = ({ goal, onEdit, onDelete, onContribute, deleting }: GoalCardPr
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <p className="font-medium text-gray-900">{goal.title}</p>
-            <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600">
+            <p className="font-medium text-ink">{goal.title}</p>
+            <span className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
               {CATEGORY_LABELS[goal.category] ?? goal.category}
             </span>
           </div>
-          {goal.description && <p className="mt-1 text-sm text-gray-500">{goal.description}</p>}
+          {goal.description && <p className="mt-1 text-sm text-ink-muted">{goal.description}</p>}
         </div>
         <div className="flex gap-2">
           <button onClick={() => onEdit(goal)} className="btn-secondary">
@@ -66,7 +66,7 @@ const GoalCard = ({ goal, onEdit, onDelete, onContribute, deleting }: GoalCardPr
           <button
             onClick={() => onDelete(goal)}
             disabled={deleting}
-            className="rounded-lg px-4 py-2 font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg px-4 py-2 font-medium text-danger transition-colors hover:bg-danger/10 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {deleting ? 'Deleting...' : 'Delete'}
           </button>
@@ -74,13 +74,13 @@ const GoalCard = ({ goal, onEdit, onDelete, onContribute, deleting }: GoalCardPr
       </div>
 
       <div>
-        <div className="h-2 w-full rounded-full bg-gray-100">
+        <div className="h-2 w-full rounded-full bg-surface">
           <div
-            className={`h-2 rounded-full ${isCompleted ? 'bg-success' : 'bg-primary-600'}`}
+            className={`h-2 rounded-full ${isCompleted ? 'bg-success' : 'bg-accent'}`}
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="mt-1 flex items-center justify-between text-sm text-gray-600">
+        <div className="mt-1 flex items-center justify-between text-sm text-ink-muted">
           <span>
             {formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)} ({Math.round(progress)}%)
           </span>
@@ -103,9 +103,9 @@ const GoalCard = ({ goal, onEdit, onDelete, onContribute, deleting }: GoalCardPr
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Amount"
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+              className="block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
             />
-            {error && <p className="mt-1 text-sm text-red-700">{error}</p>}
+            {error && <p className="mt-1 text-sm text-danger">{error}</p>}
           </div>
           <button type="submit" disabled={submitting} className="btn-primary">
             {submitting ? 'Adding...' : 'Add'}
