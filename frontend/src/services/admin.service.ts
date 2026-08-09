@@ -1,5 +1,5 @@
 import adminApiClient from '../lib/adminApiClient';
-import { AdminStats, AdminUser, AdminUsersResponse } from '../types/admin.types';
+import { AdminStats, AdminUser, AdminUsersResponse, AdminUserDetail } from '../types/admin.types';
 
 class AdminService {
   async loginWithGoogle(credential: string): Promise<AdminUser> {
@@ -30,6 +30,11 @@ class AdminService {
 
   async updateUserStatus(id: string, isActive: boolean): Promise<void> {
     await adminApiClient.patch(`/admin/users/${id}/status`, { isActive });
+  }
+
+  async getUserDetail(id: string): Promise<AdminUserDetail> {
+    const response = await adminApiClient.get<{ user: AdminUserDetail }>(`/admin/users/${id}`);
+    return response.data.user;
   }
 }
 

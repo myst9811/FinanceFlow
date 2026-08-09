@@ -15,6 +15,7 @@ import Settings from './pages/Settings';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminUserDetail from './pages/admin/AdminUserDetail';
 
 function HomeRoute() {
   const { isAuthenticated, loading } = useAuth();
@@ -64,6 +65,7 @@ function App() {
         <Route element={<AdminRoute />}>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
+          <Route path="users/:id" element={<AdminUserDetail />} />
         </Route>
       </Route>
 
