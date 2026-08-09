@@ -12,6 +12,7 @@ import {
 } from '../types/auth.types';
 import { validateRegisterInput, validateLoginInput } from '../utils/validation';
 import { ApiError } from '../utils/ApiError';
+import { issueNonce } from '../lib/googleNonceStore';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   const { email, password, firstName, lastName }: RegisterRequest = req.body;
@@ -147,4 +148,8 @@ export const getCurrentUser = async (
   }
 
   res.status(200).json({ user });
+};
+
+export const getGoogleNonce = async (req: Request, res: Response): Promise<void> => {
+  res.status(200).json({ nonce: issueNonce() });
 };
