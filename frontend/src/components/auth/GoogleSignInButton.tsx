@@ -70,7 +70,7 @@ const GoogleSignInButton = ({ onCredential }: GoogleSignInButtonProps) => {
 
   if (scriptError) {
     return (
-      <p className="text-center text-sm text-red-600">
+      <p className="text-center text-sm text-danger">
         Could not load Google Sign-In. Check your connection and reload.
       </p>
     );
