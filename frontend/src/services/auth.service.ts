@@ -24,6 +24,23 @@ class AuthService {
     return response.data.user;
   }
 
+  async getGoogleNonce(): Promise<string> {
+    const response = await apiClient.get<{ nonce: string }>('/auth/nonce');
+    return response.data.nonce;
+  }
+
+  async loginWithGoogle(credential: string): Promise<AuthResponse> {
+    const response = await apiClient.post<AuthResponse>('/auth/google', { credential });
+    if (response.data.token) {
+      localStorage.setItem(AUTH_TOKEN_KEY, response.data.token);
+    }
+    return response.data;
+  }
+
+  async linkGoogleAccount(credential: string): Promise<void> {
+    await apiClient.post('/auth/google/link', { credential });
+  }
+
   logout(): void {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     window.location.href = '/login';

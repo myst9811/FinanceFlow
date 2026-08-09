@@ -5,6 +5,7 @@ interface GoogleCredentialResponse {
 interface GoogleIdConfiguration {
   client_id: string;
   callback: (response: GoogleCredentialResponse) => void;
+  nonce?: string;
 }
 
 interface GoogleButtonConfiguration {
