@@ -64,3 +64,38 @@ export const updateUserStatus = async (req: AdminRequest, res: Response): Promis
 
   res.status(200).json({ user });
 };
+
+export const getUserDetail = async (req: AdminRequest, res: Response): Promise<void> => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.params.id },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      createdAt: true,
+      updatedAt: true,
+      isActive: true,
+      googleSubject: true,
+      password: true,
+      accounts: {
+        select: { id: true, name: true, type: true, bankName: true, isActive: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+      },
+      goals: {
+        select: { id: true, title: true, category: true, targetDate: true, isActive: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+      },
+      _count: { select: { accounts: true, transactions: true, goals: true } },
+    },
+  });
+
+  if (!user) {
+    throw new ApiError(404, 'User not found');
+  }
+
+  const { googleSubject, password, ...rest } = user;
+  res.status(200).json({
+    user: { ...rest, googleLinked: Boolean(googleSubject), hasPassword: Boolean(password) },
+  });
+};

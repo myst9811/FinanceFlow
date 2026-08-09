@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { googleLogin, logout, me } from '../controllers/admin/auth.controller';
 import { getStats } from '../controllers/admin/stats.controller';
-import { getUsers, updateUserStatus } from '../controllers/admin/users.controller';
+import { getUsers, updateUserStatus, getUserDetail } from '../controllers/admin/users.controller';
 import { requireAdmin } from '../middleware/adminAuth.middleware';
 import { requireTrustedOrigin } from '../middleware/csrf.middleware';
 import { googleAuthLimiter } from '../middleware/rateLimit.middleware';
@@ -21,6 +21,7 @@ router.get('/auth/me', requireAdmin, me);
 
 router.get('/stats', requireAdmin, getStats);
 router.get('/users', requireAdmin, getUsers);
+router.get('/users/:id', requireAdmin, getUserDetail);
 router.patch('/users/:id/status', requireAdmin, updateUserStatus);
 
 export default router;
