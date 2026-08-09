@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import AnimatedLogoMark from '../components/landing/AnimatedLogoMark';
 import LandingIntro from '../components/landing/LandingIntro';
+import GithubIcon from '../components/landing/GithubIcon';
 import { useLandingIntro } from '../components/landing/useLandingIntro';
 import './Landing.css';
 
@@ -18,7 +19,7 @@ const Landing = () => {
         <nav className="nav-links">
           <a className="nav-anchor" href="#how">How it works</a>
           <a className="nav-anchor" href="#philosophy">Why manual</a>
-          <a className="nav-anchor" href="https://github.com/myst9811/ChronosFin" target="_blank" rel="noopener noreferrer">Source</a>
+          <a className="nav-anchor" href="https://github.com/myst9811/ChronosFin" target="_blank" rel="noopener noreferrer"><GithubIcon /> Source</a>
           <Link className="btn btn-ghost" to="/login">Log in</Link>
         </nav>
       </header>
@@ -33,7 +34,7 @@ const Landing = () => {
             </p>
             <div className="hero-actions">
               <Link className="btn btn-primary" to="/register">Start your ledger</Link>
-              <a className="btn btn-ghost" href="https://github.com/myst9811/ChronosFin" target="_blank" rel="noopener noreferrer">View source on GitHub</a>
+              <a className="btn btn-ghost" href="https://github.com/myst9811/ChronosFin" target="_blank" rel="noopener noreferrer"><GithubIcon /> View source on GitHub</a>
             </div>
             <p className="hero-note">Free. No credit card. No bank link required.</p>
           </div>
@@ -157,7 +158,7 @@ const Landing = () => {
               <p className="stack-line">Built with <span className="mono">React</span> · <span className="mono">Express</span> · <span className="mono">PostgreSQL</span> · <span className="mono">Prisma</span></p>
             </div>
             <div className="oss-actions">
-              <a className="btn btn-primary" href="https://github.com/myst9811/ChronosFin" target="_blank" rel="noopener noreferrer">Browse the repository</a>
+              <a className="btn btn-primary" href="https://github.com/myst9811/ChronosFin" target="_blank" rel="noopener noreferrer"><GithubIcon /> Browse the repository</a>
               <a className="btn btn-ghost" href="https://github.com/myst9811/ChronosFin/blob/main/docs/API.md" target="_blank" rel="noopener noreferrer">Read the API docs</a>
             </div>
           </div>
@@ -176,7 +177,7 @@ const Landing = () => {
       <footer className="wrap">
         <span>ChronosFin — an open-source personal finance ledger.</span>
         <span className="footer-links">
-          <a href="https://github.com/myst9811/ChronosFin" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href="https://github.com/myst9811/ChronosFin" target="_blank" rel="noopener noreferrer"><GithubIcon /> GitHub</a>
           <Link to="/login">Log in</Link>
         </span>
       </footer>

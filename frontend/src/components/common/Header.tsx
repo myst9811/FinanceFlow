@@ -55,8 +55,9 @@ const Header = () => {
 
           {/* Logo & Brand */}
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center lg:hidden pl-14">
-              <img src="/chronosfin-logo.svg" alt="ChronosFin" className="h-8 w-auto" />
+            <div className="flex-shrink-0 flex items-center gap-2 lg:hidden pl-14">
+              <img src="/clock-growth-logo.svg" alt="" className="h-8 w-auto" />
+              <span className="text-base font-bold text-gray-900">ChronosFin</span>
             </div>
           </div>
 

@@ -43,8 +43,9 @@ const Sidebar: React.FC = () => {
         lg:translate-x-0 lg:static lg:inset-0
         fixed inset-y-0 left-0 z-40 w-64
       `}>
-        <div className="p-6">
-          <img src="/chronosfin-logo.svg" alt="ChronosFin" className="h-9 w-auto" />
+        <div className="p-6 flex items-center gap-2">
+          <img src="/clock-growth-logo.svg" alt="" className="h-9 w-auto" />
+          <span className="text-lg font-bold text-gray-900">ChronosFin</span>
         </div>
         <nav className="mt-6">
           {navigation.map((item) => (
