@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../../lib/prisma';
-import { googleLogin } from '../auth.controller';
+import { googleLogin, linkGoogleAccount } from '../auth.controller';
 import { issueNonce } from '../../lib/googleNonceStore';
 import * as googleAuthLib from '../../lib/googleAuth';
+import type { AuthenticatedRequest } from '../../types/auth.types';
 
 function createMockRes(): Response {
   const res: any = {};
@@ -149,5 +151,77 @@ describe('googleLogin', () => {
     const res = createMockRes();
 
     await expect(googleLogin(req, res)).rejects.toMatchObject({ statusCode: 400 });
+  });
+});
+
+async function createPasswordUser() {
+  const email = uniqueEmail();
+  const user = await prisma.user.create({
+    data: { email, password: await bcrypt.hash('Password1', 10), firstName: 'Link', lastName: 'Test' },
+  });
+  testUserIds.push(user.id);
+  return user;
+}
+
+describe('linkGoogleAccount', () => {
+  it('links a Google sub to the authenticated user', async () => {
+    const user = await createPasswordUser();
+    const sub = uniqueSub();
+    vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockResolvedValueOnce({
+      sub, email: uniqueEmail(), email_verified: true, nonce: issueNonce(),
+    } as any);
+
+    const req = {
+      body: { credential: 'fake-token' },
+      user: { userId: user.id, email: user.email },
+    } as unknown as AuthenticatedRequest;
+    const res = createMockRes();
+
+    await linkGoogleAccount(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    const updated = await prisma.user.findUnique({ where: { id: user.id } });
+    expect(updated?.googleSubject).toBe(sub);
+  });
+
+  it('rejects when the sub is already linked to a different user', async () => {
+    const sub = uniqueSub();
+    const otherUser = await prisma.user.create({
+      data: { email: uniqueEmail(), password: null, googleSubject: sub, firstName: 'Other', lastName: 'User' },
+    });
+    testUserIds.push(otherUser.id);
+
+    const user = await createPasswordUser();
+    vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockResolvedValueOnce({
+      sub, email: uniqueEmail(), email_verified: true, nonce: issueNonce(),
+    } as any);
+
+    const req = {
+      body: { credential: 'fake-token' },
+      user: { userId: user.id, email: user.email },
+    } as unknown as AuthenticatedRequest;
+    const res = createMockRes();
+
+    await expect(linkGoogleAccount(req, res)).rejects.toMatchObject({ statusCode: 409 });
+
+    const unchanged = await prisma.user.findUnique({ where: { id: user.id } });
+    expect(unchanged?.googleSubject).toBeNull();
+  });
+
+  it('rejects a reused nonce', async () => {
+    const user = await createPasswordUser();
+    const nonce = issueNonce();
+    vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockResolvedValueOnce({
+      sub: uniqueSub(), email: uniqueEmail(), email_verified: true, nonce,
+    } as any);
+    const req1 = { body: { credential: 't1' }, user: { userId: user.id, email: user.email } } as unknown as AuthenticatedRequest;
+    await linkGoogleAccount(req1, createMockRes());
+
+    vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockResolvedValueOnce({
+      sub: uniqueSub(), email: uniqueEmail(), email_verified: true, nonce,
+    } as any);
+    const req2 = { body: { credential: 't2' }, user: { userId: user.id, email: user.email } } as unknown as AuthenticatedRequest;
+
+    await expect(linkGoogleAccount(req2, createMockRes())).rejects.toMatchObject({ statusCode: 403 });
   });
 });

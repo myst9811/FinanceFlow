@@ -207,3 +207,36 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
     token,
   });
 };
+
+export const linkGoogleAccount = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  const credential = req.body?.credential;
+  if (!credential || !req.user) {
+    throw new ApiError(400, 'Missing credential');
+  }
+
+  let payload;
+  try {
+    payload = await verifyGoogleIdToken(credential);
+  } catch {
+    throw new ApiError(403, 'Not authorized');
+  }
+
+  if (!payload || payload.email_verified !== true || !payload.sub) {
+    throw new ApiError(403, 'Not authorized');
+  }
+  if (!consumeNonce(payload.nonce)) {
+    throw new ApiError(403, 'Invalid or expired sign-in attempt');
+  }
+
+  const existingLink = await prisma.user.findUnique({ where: { googleSubject: payload.sub } });
+  if (existingLink && existingLink.id !== req.user.userId) {
+    throw new ApiError(409, 'This Google account is already linked to a different ChronosFin account');
+  }
+
+  await prisma.user.update({
+    where: { id: req.user.userId },
+    data: { googleSubject: payload.sub },
+  });
+
+  res.status(200).json({ linked: true });
+};

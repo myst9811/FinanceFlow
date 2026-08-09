@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, getCurrentUser, getGoogleNonce, googleLogin } from '../controllers/auth.controller';
+import { register, login, getCurrentUser, getGoogleNonce, googleLogin, linkGoogleAccount } from '../controllers/auth.controller';
 import { authenticateToken } from '../middleware/auth.middleware';
 import { loginLimiter, registerLimiter, googleAuthLimiter } from '../middleware/rateLimit.middleware';
 
@@ -13,5 +13,6 @@ router.post('/google', googleAuthLimiter, googleLogin);
 
 // Protected routes
 router.get('/me', authenticateToken, getCurrentUser);
+router.post('/google/link', authenticateToken, googleAuthLimiter, linkGoogleAccount);
 
 export default router;
