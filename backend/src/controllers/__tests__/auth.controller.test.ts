@@ -133,6 +133,24 @@ describe('login', () => {
       message: 'Invalid email or password',
     });
   });
+
+  it('rejects password login for a Google-only account (no password set)', async () => {
+    const email = uniqueEmail();
+    await prisma.user.create({
+      data: {
+        email,
+        password: null,
+        googleSubject: `google-sub-${Date.now()}`,
+        firstName: 'Google',
+        lastName: 'User',
+      },
+    });
+
+    const req = { body: { email, password: 'AnyPassword1' } } as unknown as Request;
+    const res = createMockRes();
+
+    await expect(login(req, res)).rejects.toMatchObject({ statusCode: 401 });
+  });
 });
 
 describe('getCurrentUser', () => {
