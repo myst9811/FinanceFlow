@@ -2,10 +2,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../lib/prisma';
+import { Prisma } from '../../generated/prisma';
 import { googleLogin, linkGoogleAccount } from '../auth.controller';
 import { issueNonce } from '../../lib/googleNonceStore';
 import * as googleAuthLib from '../../lib/googleAuth';
 import type { AuthenticatedRequest } from '../../types/auth.types';
+
+function p2002(target: string[]): Prisma.PrismaClientKnownRequestError {
+  return new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+    code: 'P2002',
+    clientVersion: 'test',
+    meta: { target },
+  });
+}
 
 function createMockRes(): Response {
   const res: any = {};
@@ -138,6 +147,23 @@ describe('googleLogin', () => {
     expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
   });
 
+  it('consumes the nonce even when the email is unverified, so it cannot be retried', async () => {
+    const nonce = issueNonce();
+    vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockResolvedValueOnce({
+      sub: uniqueSub(), email: uniqueEmail(), email_verified: false, nonce,
+    } as any);
+    const firstReq = { body: { credential: 'fake-token' } } as unknown as Request;
+    await expect(googleLogin(firstReq, createMockRes())).rejects.toMatchObject({ statusCode: 403 });
+
+    // Retry with the same (now-stale) nonce, this time with a verified email - must
+    // still fail, because the nonce was already burned by the unverified attempt.
+    vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockResolvedValueOnce({
+      sub: uniqueSub(), email: uniqueEmail(), email_verified: true, nonce,
+    } as any);
+    const secondReq = { body: { credential: 'fake-token-2' } } as unknown as Request;
+    await expect(googleLogin(secondReq, createMockRes())).rejects.toMatchObject({ statusCode: 403 });
+  });
+
   it('rejects when the Google token fails verification', async () => {
     vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockRejectedValueOnce(new Error('invalid token'));
     const req = { body: { credential: 'garbage' } } as unknown as Request;
@@ -151,6 +177,40 @@ describe('googleLogin', () => {
     const res = createMockRes();
 
     await expect(googleLogin(req, res)).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it('resolves to the winning row instead of a 500 when a concurrent create races on the same sub', async () => {
+    const sub = uniqueSub();
+    const winner = await prisma.user.create({
+      data: { email: uniqueEmail(), password: null, googleSubject: sub, firstName: 'Winner', lastName: 'Race' },
+    });
+    testUserIds.push(winner.id);
+
+    vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockResolvedValueOnce({
+      sub, email: uniqueEmail(), email_verified: true, nonce: issueNonce(),
+    } as any);
+    vi.spyOn(prisma.user, 'create').mockRejectedValueOnce(p2002(['googleSubject']));
+
+    const req = { body: { credential: 'fake-token' } } as unknown as Request;
+    const res = createMockRes();
+
+    await googleLogin(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    const body = (res.json as any).mock.calls[0][0];
+    expect(body.user.id).toBe(winner.id);
+  });
+
+  it('returns 409, not a 500, when a concurrent create races on the same email', async () => {
+    vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockResolvedValueOnce({
+      sub: uniqueSub(), email: uniqueEmail(), email_verified: true, nonce: issueNonce(),
+    } as any);
+    vi.spyOn(prisma.user, 'create').mockRejectedValueOnce(p2002(['email']));
+
+    const req = { body: { credential: 'fake-token' } } as unknown as Request;
+    const res = createMockRes();
+
+    await expect(googleLogin(req, res)).rejects.toMatchObject({ statusCode: 409 });
   });
 });
 
@@ -223,5 +283,20 @@ describe('linkGoogleAccount', () => {
     const req2 = { body: { credential: 't2' }, user: { userId: user.id, email: user.email } } as unknown as AuthenticatedRequest;
 
     await expect(linkGoogleAccount(req2, createMockRes())).rejects.toMatchObject({ statusCode: 403 });
+  });
+
+  it('returns 409, not a 500, when a concurrent link races on the same sub', async () => {
+    const user = await createPasswordUser();
+    vi.spyOn(googleAuthLib, 'verifyGoogleIdToken').mockResolvedValueOnce({
+      sub: uniqueSub(), email: uniqueEmail(), email_verified: true, nonce: issueNonce(),
+    } as any);
+    vi.spyOn(prisma.user, 'update').mockRejectedValueOnce(p2002(['googleSubject']));
+
+    const req = {
+      body: { credential: 'fake-token' },
+      user: { userId: user.id, email: user.email },
+    } as unknown as AuthenticatedRequest;
+
+    await expect(linkGoogleAccount(req, createMockRes())).rejects.toMatchObject({ statusCode: 409 });
   });
 });

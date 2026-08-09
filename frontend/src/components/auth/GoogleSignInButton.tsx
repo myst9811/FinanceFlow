@@ -11,6 +11,11 @@ type GoogleSignInButtonProps = {
 const GoogleSignInButton = ({ onCredential }: GoogleSignInButtonProps) => {
   const buttonRef = useRef<HTMLDivElement>(null);
   const [scriptError, setScriptError] = useState(false);
+  const onCredentialRef = useRef(onCredential);
+
+  useEffect(() => {
+    onCredentialRef.current = onCredential;
+  }, [onCredential]);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) {
@@ -34,7 +39,7 @@ const GoogleSignInButton = ({ onCredential }: GoogleSignInButtonProps) => {
           client_id: GOOGLE_CLIENT_ID,
           nonce,
           callback: (response) => {
-            onCredential(response.credential);
+            onCredentialRef.current(response.credential);
           },
         });
 
@@ -54,7 +59,10 @@ const GoogleSignInButton = ({ onCredential }: GoogleSignInButtonProps) => {
     return () => {
       cancelled = true;
     };
-  }, [onCredential]);
+    // Intentionally run once: the callback identity is tracked via
+    // onCredentialRef above so re-renders of the parent (e.g. every keystroke
+    // in a login form) don't re-fetch a nonce or re-initialize the button.
+  }, []);
 
   if (!GOOGLE_CLIENT_ID) {
     return null;

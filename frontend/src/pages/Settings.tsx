@@ -5,16 +5,16 @@ import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 import authService from '../services/auth.service';
 
 const Settings = () => {
-  const { user } = useAuth();
-  const [linked, setLinked] = useState(user?.googleLinked ?? false);
+  const { user, refreshUser } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const linked = user?.googleLinked ?? false;
 
   const handleGoogleCredential = async (credential: string) => {
     setError(null);
     try {
       await authService.linkGoogleAccount(credential);
-      setLinked(true);
+      await refreshUser(); // picks up googleLinked: true from /auth/me
       setSuccess(true);
     } catch (err) {
       const message = (err as AxiosError<{ error: string }>).response?.data?.error || 'Failed to link Google account';

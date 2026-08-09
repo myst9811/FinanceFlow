@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
+import { Prisma } from '../generated/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/env';
@@ -170,11 +171,11 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
     throw new ApiError(403, 'Not authorized');
   }
 
+  if (!consumeNonce(payload?.nonce)) {
+    throw new ApiError(403, 'Invalid or expired sign-in attempt');
+  }
   if (!payload || payload.email_verified !== true || !payload.email || !payload.sub) {
     throw new ApiError(403, 'Not authorized');
-  }
-  if (!consumeNonce(payload.nonce)) {
-    throw new ApiError(403, 'Invalid or expired sign-in attempt');
   }
 
   let user = await prisma.user.findUnique({ where: { googleSubject: payload.sub } });
@@ -186,15 +187,31 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
       throw new ApiError(409, 'An account with this email already exists. Log in and link Google from Settings.');
     }
 
-    user = await prisma.user.create({
-      data: {
-        email,
-        password: null,
-        googleSubject: payload.sub,
-        firstName: payload.given_name?.trim() || 'ChronosFin',
-        lastName: payload.family_name?.trim() || 'User',
-      },
-    });
+    try {
+      user = await prisma.user.create({
+        data: {
+          email,
+          password: null,
+          googleSubject: payload.sub,
+          firstName: payload.given_name?.trim() || 'ChronosFin',
+          lastName: payload.family_name?.trim() || 'User',
+        },
+      });
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        const target = (err.meta?.target as string[] | undefined) ?? [];
+        if (target.includes('googleSubject')) {
+          // Another concurrent request for the same Google account won the race - use their row.
+          const winner = await prisma.user.findUnique({ where: { googleSubject: payload.sub } });
+          if (!winner) throw err;
+          user = winner;
+        } else {
+          throw new ApiError(409, 'An account with this email already exists. Log in and link Google from Settings.');
+        }
+      } else {
+        throw err;
+      }
+    }
   }
 
   if (!user.isActive) {
@@ -223,11 +240,11 @@ export const linkGoogleAccount = async (req: AuthenticatedRequest, res: Response
     throw new ApiError(403, 'Not authorized');
   }
 
+  if (!consumeNonce(payload?.nonce)) {
+    throw new ApiError(403, 'Invalid or expired sign-in attempt');
+  }
   if (!payload || payload.email_verified !== true || !payload.sub) {
     throw new ApiError(403, 'Not authorized');
-  }
-  if (!consumeNonce(payload.nonce)) {
-    throw new ApiError(403, 'Invalid or expired sign-in attempt');
   }
 
   const existingLink = await prisma.user.findUnique({ where: { googleSubject: payload.sub } });
@@ -235,10 +252,17 @@ export const linkGoogleAccount = async (req: AuthenticatedRequest, res: Response
     throw new ApiError(409, 'This Google account is already linked to a different ChronosFin account');
   }
 
-  await prisma.user.update({
-    where: { id: req.user.userId },
-    data: { googleSubject: payload.sub },
-  });
+  try {
+    await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { googleSubject: payload.sub },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw new ApiError(409, 'This Google account is already linked to a different ChronosFin account');
+    }
+    throw err;
+  }
 
   res.status(200).json({ linked: true });
 };

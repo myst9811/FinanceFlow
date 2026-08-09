@@ -8,7 +8,7 @@ const router = Router();
 // Public routes
 router.post('/register', registerLimiter, register);
 router.post('/login', loginLimiter, login);
-router.get('/nonce', getGoogleNonce);
+router.get('/nonce', googleAuthLimiter, getGoogleNonce);
 router.post('/google', googleAuthLimiter, googleLogin);
 
 // Protected routes

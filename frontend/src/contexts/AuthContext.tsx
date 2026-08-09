@@ -35,8 +35,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const loginWithGoogle = async (credential: string) => {
-    const response = await authService.loginWithGoogle(credential);
-    setUser(response.user);
+    await authService.loginWithGoogle(credential);
+    // authService.loginWithGoogle's response doesn't carry googleLinked (only
+    // /auth/me does), and a Google sign-in always means the account is
+    // linked - refetch so the context's user reflects that immediately
+    // instead of only after a later page load.
+    await refreshUser();
+  };
+
+  const refreshUser = async () => {
+    const currentUser = await authService.getCurrentUser();
+    setUser(currentUser);
   };
 
   const logout = () => {
@@ -50,6 +59,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     login,
     register,
     loginWithGoogle,
+    refreshUser,
     logout,
     isAuthenticated: !!user,
   };

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { issueNonce, consumeNonce } from '../googleNonceStore';
 
 describe('googleNonceStore', () => {
@@ -20,5 +20,21 @@ describe('googleNonceStore', () => {
     const a = issueNonce();
     const b = issueNonce();
     expect(a).not.toBe(b);
+  });
+
+  it('sweeps expired, never-consumed nonces on the next issuance instead of leaking them forever', () => {
+    vi.useFakeTimers();
+    try {
+      const stale = issueNonce();
+      vi.advanceTimersByTime(6 * 60 * 1000); // past the 5-minute TTL, never consumed
+      issueNonce(); // triggers the sweep
+
+      // The stale nonce is gone from the store, not merely "expired" - consuming it
+      // now hits the "unknown nonce" path rather than the "expired" path, but either
+      // way it must be rejected.
+      expect(consumeNonce(stale)).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
