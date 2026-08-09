@@ -12,7 +12,8 @@ import {
 } from '../types/auth.types';
 import { validateRegisterInput, validateLoginInput } from '../utils/validation';
 import { ApiError } from '../utils/ApiError';
-import { issueNonce } from '../lib/googleNonceStore';
+import { issueNonce, consumeNonce } from '../lib/googleNonceStore';
+import { verifyGoogleIdToken } from '../lib/googleAuth';
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   const { email, password, firstName, lastName }: RegisterRequest = req.body;
@@ -152,4 +153,57 @@ export const getCurrentUser = async (
 
 export const getGoogleNonce = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ nonce: issueNonce() });
+};
+
+export const googleLogin = async (req: Request, res: Response): Promise<void> => {
+  const credential = req.body?.credential;
+  if (!credential) {
+    throw new ApiError(400, 'Missing credential');
+  }
+
+  let payload;
+  try {
+    payload = await verifyGoogleIdToken(credential);
+  } catch {
+    throw new ApiError(403, 'Not authorized');
+  }
+
+  if (!payload || payload.email_verified !== true || !payload.email || !payload.sub) {
+    throw new ApiError(403, 'Not authorized');
+  }
+  if (!consumeNonce(payload.nonce)) {
+    throw new ApiError(403, 'Invalid or expired sign-in attempt');
+  }
+
+  let user = await prisma.user.findUnique({ where: { googleSubject: payload.sub } });
+
+  if (!user) {
+    const email = payload.email.toLowerCase();
+    const emailCollision = await prisma.user.findUnique({ where: { email } });
+    if (emailCollision) {
+      throw new ApiError(409, 'An account with this email already exists. Log in and link Google from Settings.');
+    }
+
+    user = await prisma.user.create({
+      data: {
+        email,
+        password: null,
+        googleSubject: payload.sub,
+        firstName: payload.given_name?.trim() || 'ChronosFin',
+        lastName: payload.family_name?.trim() || 'User',
+      },
+    });
+  }
+
+  if (!user.isActive) {
+    throw new ApiError(403, 'Account deactivated');
+  }
+
+  const jwtPayload: JwtPayload = { userId: user.id, email: user.email };
+  const token = jwt.sign(jwtPayload, config.jwtSecret, { expiresIn: config.jwtExpiresIn } as jwt.SignOptions);
+
+  res.status(200).json({
+    user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
+    token,
+  });
 };
