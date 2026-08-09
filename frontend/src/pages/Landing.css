@@ -139,11 +139,24 @@
   align-items: center;
   text-decoration: none;
 }
-.landing-page .wordmark img {
+.landing-page .logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.landing-page .logo-mark img {
   height: 34px;
   width: auto;
   display: block;
 }
+.landing-page .logo-wordmark {
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.landing-page .logo-mark .wm-chronos { color: #14234B; }
+.landing-page .logo-mark .wm-fin { color: #2DBD8B; }
 
 .landing-page .nav-links {
   display: flex;
@@ -151,6 +164,9 @@
   gap: 28px;
 }
 .landing-page .nav-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   text-decoration: none;
   font-size: 0.9rem;
   color: var(--ink-muted);
@@ -556,4 +572,18 @@
 @media (max-width: 480px) {
   .landing-page .ledger-row { grid-template-columns: 1fr auto; }
   .landing-page .ledger-row .date { grid-column: 1 / -1; order: -1; }
+}
+
+/* ---------- github icon inline with source links ---------- */
+
+.landing-page .gh-icon {
+  width: 1em;
+  height: 1em;
+  flex: none;
+}
+.landing-page .btn .gh-icon { margin-right: 2px; }
+.landing-page footer .footer-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
