@@ -183,4 +183,25 @@ describe('getCurrentUser', () => {
 
     await expect(getCurrentUser(req, res)).rejects.toMatchObject({ statusCode: 401 });
   });
+
+  it('reports googleLinked based on whether googleSubject is set', async () => {
+    const email = uniqueEmail();
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password: null,
+        googleSubject: `sub-${Date.now()}`,
+        firstName: 'Test',
+        lastName: 'User',
+      },
+    });
+
+    const req = { user: { userId: user.id, email: user.email } } as unknown as AuthenticatedRequest;
+    const res = createMockRes();
+
+    await getCurrentUser(req, res);
+
+    const body = (res.json as any).mock.calls[0][0];
+    expect(body.user.googleLinked).toBe(true);
+  });
 });

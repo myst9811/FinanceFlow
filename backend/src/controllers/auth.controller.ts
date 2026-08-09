@@ -141,6 +141,7 @@ export const getCurrentUser = async (
       firstName: true,
       lastName: true,
       createdAt: true,
+      googleSubject: true,
     },
   });
 
@@ -148,7 +149,8 @@ export const getCurrentUser = async (
     throw new ApiError(404, 'User not found');
   }
 
-  res.status(200).json({ user });
+  const { googleSubject, ...rest } = user;
+  res.status(200).json({ user: { ...rest, googleLinked: Boolean(googleSubject) } });
 };
 
 export const getGoogleNonce = async (req: Request, res: Response): Promise<void> => {
