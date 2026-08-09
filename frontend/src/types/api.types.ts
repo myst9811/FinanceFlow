@@ -65,6 +65,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  googleLinked?: boolean;
 }
 
 // Account Types

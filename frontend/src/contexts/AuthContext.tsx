@@ -34,6 +34,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(response.user);
   };
 
+  const loginWithGoogle = async (credential: string) => {
+    const response = await authService.loginWithGoogle(credential);
+    setUser(response.user);
+  };
+
   const logout = () => {
     authService.logout();
     setUser(null);
@@ -44,6 +49,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loading,
     login,
     register,
+    loginWithGoogle,
     logout,
     isAuthenticated: !!user,
   };
