@@ -24,8 +24,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const AMOUNT_STYLES: Record<TransactionType, string> = {
   [TransactionType.INCOME]: 'text-success',
-  [TransactionType.EXPENSE]: 'text-gray-900',
-  [TransactionType.TRANSFER]: 'text-primary-600',
+  [TransactionType.EXPENSE]: 'text-ink',
+  [TransactionType.TRANSFER]: 'text-accent',
 };
 
 const AMOUNT_PREFIX: Record<TransactionType, string> = {
@@ -38,8 +38,8 @@ const TransactionRow = ({ transaction, onEdit, onDelete }: TransactionRowProps) 
   return (
     <div className="card flex items-center justify-between">
       <div>
-        <p className="font-medium text-gray-900">{transaction.description}</p>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="font-medium text-ink">{transaction.description}</p>
+        <p className="mt-1 text-sm text-ink-muted">
           {CATEGORY_LABELS[transaction.category] ?? transaction.category} · {formatDateShort(transaction.date)} ·{' '}
           {transaction.account.name}
           {transaction.toAccount && ` → ${transaction.toAccount.name}`}
@@ -57,7 +57,7 @@ const TransactionRow = ({ transaction, onEdit, onDelete }: TransactionRowProps) 
           </button>
           <button
             onClick={() => onDelete(transaction)}
-            className="rounded-lg px-4 py-2 font-medium text-red-600 transition-colors hover:bg-red-50"
+            className="rounded-lg px-4 py-2 font-medium text-danger transition-colors hover:bg-danger/10"
           >
             Delete
           </button>
