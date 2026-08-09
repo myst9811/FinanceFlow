@@ -26,7 +26,7 @@ const Sidebar: React.FC = () => {
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-md bg-white shadow-md"
+          className="p-2 rounded-md bg-surface-2 shadow-md text-ink"
         >
           {isOpen ? (
             <XMarkIcon className="h-6 w-6" />
@@ -38,14 +38,14 @@ const Sidebar: React.FC = () => {
 
       {/* Sidebar */}
       <div className={`
-        bg-white shadow-sm border-r border-gray-200 transition-transform duration-300 ease-in-out
+        bg-surface-2 shadow-sm border-r border-line transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:inset-0
         fixed inset-y-0 left-0 z-40 w-64
       `}>
         <div className="p-6 flex items-center gap-2">
           <img src="/clock-growth-logo.svg" alt="" className="h-9 w-auto" />
-          <span className="text-lg font-bold text-gray-900">ChronosFin</span>
+          <span className="text-lg font-bold text-ink">ChronosFin</span>
         </div>
         <nav className="mt-6">
           {navigation.map((item) => (
@@ -56,8 +56,8 @@ const Sidebar: React.FC = () => {
               className={({ isActive }) =>
                 `flex items-center px-6 py-3 transition-colors ${
                   isActive
-                    ? 'bg-primary-50 text-primary-600'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
+                    ? 'bg-accent/10 text-accent'
+                    : 'text-ink-muted hover:bg-surface hover:text-accent'
                 }`
               }
               onClick={() => setIsOpen(false)}
