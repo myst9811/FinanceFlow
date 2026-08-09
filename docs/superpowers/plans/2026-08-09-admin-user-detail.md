@@ -575,13 +575,13 @@ Expected: both clean.
 
 - [ ] **Step 3: Live smoke test against a real running backend**
 
-With `npm run dev:backend` running, hit the new endpoint directly for a real admin session (or, without a session, confirm it's rejected):
+With `npm run dev:backend` running, hit the new endpoint directly, without an admin session, to confirm it's rejected. Every admin route (including this new one) sits behind `requireTrustedOrigin` (`backend/src/middleware/csrf.middleware.ts`), which runs before `requireAdmin` and rejects any request with a missing/untrusted `Origin` header — a bare `curl` with no `Origin` header hits that check first, not the auth check, so the `Origin` header must be included to actually exercise `requireAdmin`:
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3001/api/admin/users/any-id
+curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3001/api/admin/users/any-id -H "Origin: http://localhost:5173"
 ```
 
-Expected: `401` (no admin session cookie) — confirms `requireAdmin` is actually applied to the new route, not just present in the source.
+Expected: `401` (no admin session cookie) — confirms `requireAdmin` is actually applied to the new route, not just present in the source. (Omitting the `Origin` header entirely, or using an origin not in `backend/.env`'s `CORS_ORIGIN`, instead confirms `requireTrustedOrigin` — expected `403` — a different, earlier check, not this route's own authorization.)
 
 - [ ] **Step 4: Manual check**
 

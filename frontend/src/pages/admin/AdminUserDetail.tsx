@@ -10,37 +10,45 @@ const AdminUserDetail = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<AdminUserDetailType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const load = async () => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const detail = await adminService.getUserDetail(id);
-      setUser(detail);
-    } catch {
-      setError('Failed to load this user.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!id) return;
+    let cancelled = false;
+
+    setLoading(true);
+    setLoadError(null);
+    setActionError(null);
+
+    adminService
+      .getUserDetail(id)
+      .then((detail) => {
+        if (!cancelled) setUser(detail);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError('Failed to load this user.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
   const handleToggleActive = async () => {
     if (!user) return;
     const targetIsActive = !user.isActive;
+    setActionError(null);
     setPending(true);
     try {
       await adminService.updateUserStatus(user.id, targetIsActive);
       setUser({ ...user, isActive: targetIsActive });
     } catch {
-      setError('Failed to update status.');
+      setActionError('Failed to update status.');
     } finally {
       setPending(false);
     }
@@ -50,10 +58,10 @@ const AdminUserDetail = () => {
     return <p className="text-gray-500">Loading...</p>;
   }
 
-  if (error || !user) {
+  if (loadError || !user) {
     return (
       <div className="space-y-3">
-        <p className="text-red-400">{error ?? 'User not found.'}</p>
+        <p className="text-red-400">{loadError ?? 'User not found.'}</p>
         <Link to="/admin/users" className="text-sm text-primary-500 hover:text-primary-600">
           Back to Users
         </Link>
@@ -77,6 +85,9 @@ const AdminUserDetail = () => {
       </div>
 
       <div className="rounded-lg border border-gray-800 bg-gray-900 p-5">
+        {actionError && (
+          <p className="mb-3 rounded-md bg-red-950 p-2 text-sm text-red-400">{actionError}</p>
+        )}
         <div className="flex flex-wrap items-center gap-2">
           <span
             className={`${badgeClasses} ${

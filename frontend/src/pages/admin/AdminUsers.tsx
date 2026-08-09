@@ -91,7 +91,11 @@ const AdminUsers = () => {
                       {user.firstName} {user.lastName}
                     </Link>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400">{user.email}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400">
+                    <Link to={`/admin/users/${user.id}`} className="hover:text-primary-500">
+                      {user.email}
+                    </Link>
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400">
                     {new Date(user.createdAt).toLocaleDateString()}
                   </td>
