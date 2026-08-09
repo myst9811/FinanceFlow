@@ -14,7 +14,10 @@ const LandingIntro = ({ playing, onFinish }: LandingIntroProps) => {
         if (e.currentTarget === e.target) onFinish();
       }}
     >
-      <img className="landing-intro-mark lm-wrap" src="/clock-growth-logo.svg" alt="" />
+      <div className="landing-intro-hero">
+        <div className="landing-intro-glow" />
+        <img className="landing-intro-mark" src="/clock-growth-logo.svg" alt="" />
+      </div>
       <span className="landing-intro-wordmark">
         <span className="wm-chronos">Chronos</span><span className="wm-fin">Fin</span>
       </span>
