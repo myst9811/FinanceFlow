@@ -7,12 +7,14 @@ import {
   ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import insightService from '../../services/insight.service';
 import { Insight } from '../../types/api.types';
 
 const Header = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [insights, setInsights] = useState<Insight[]>([]);
@@ -156,7 +158,10 @@ const Header = () => {
                       <UserCircleIcon className="h-5 w-5 text-gray-400" />
                       <span>Your Profile</span>
                     </button>
-                    <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-3 transition">
+                    <button
+                      onClick={() => navigate('/settings')}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-3 transition"
+                    >
                       <Cog6ToothIcon className="h-5 w-5 text-gray-400" />
                       <span>Settings</span>
                     </button>

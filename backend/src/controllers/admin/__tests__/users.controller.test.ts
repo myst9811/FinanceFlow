@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../../lib/prisma';
 import { login } from '../../auth.controller';
-import { getUsers, updateUserStatus } from '../users.controller';
+import { getUsers, updateUserStatus, getUserDetail } from '../users.controller';
 import type { AdminRequest } from '../../../types/admin.types';
 
 function createMockRes(): Response {
@@ -178,5 +178,84 @@ describe('updateUserStatus', () => {
       statusCode: 403,
       message: 'Account deactivated',
     });
+  });
+});
+
+describe('getUserDetail', () => {
+  it('returns accounts, goals, counts, and auth method flags for a known user', async () => {
+    const user = await createTestUser();
+    await prisma.account.create({
+      data: { userId: user.id, name: 'Checking', type: 'CHECKING', balance: 500, bankName: 'Test Bank' },
+    });
+    await prisma.goal.create({
+      data: {
+        userId: user.id,
+        title: 'Emergency Fund',
+        targetAmount: 1000,
+        targetDate: new Date('2027-01-01'),
+        category: 'EMERGENCY_FUND',
+      },
+    });
+
+    const req = { params: { id: user.id } } as unknown as AdminRequest;
+    const res = createMockRes();
+
+    await getUserDetail(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    const body = (res.json as any).mock.calls[0][0];
+
+    expect(body.user.id).toBe(user.id);
+    expect(body.user.hasPassword).toBe(true);
+    expect(body.user.googleLinked).toBe(false);
+    expect(body.user._count).toEqual({ accounts: 1, transactions: 0, goals: 1 });
+    expect(body.user.accounts).toHaveLength(1);
+    expect(body.user.accounts[0].name).toBe('Checking');
+    expect(body.user.accounts[0].bankName).toBe('Test Bank');
+    expect(body.user.goals).toHaveLength(1);
+    expect(body.user.goals[0].title).toBe('Emergency Fund');
+
+    await prisma.account.deleteMany({ where: { userId: user.id } });
+    await prisma.goal.deleteMany({ where: { userId: user.id } });
+  });
+
+  it('returns 404 for an unknown user id', async () => {
+    const req = { params: { id: 'not-a-real-id' } } as unknown as AdminRequest;
+    const res = createMockRes();
+
+    await expect(getUserDetail(req, res)).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it('never includes balances, amounts, or raw password/googleSubject in the response', async () => {
+    const user = await createTestUser();
+    await prisma.account.create({
+      data: { userId: user.id, name: 'Savings', type: 'SAVINGS', balance: 12345 },
+    });
+    await prisma.goal.create({
+      data: {
+        userId: user.id,
+        title: 'Vacation',
+        targetAmount: 5000,
+        currentAmount: 1200,
+        targetDate: new Date('2027-06-01'),
+        category: 'VACATION',
+      },
+    });
+
+    const req = { params: { id: user.id } } as unknown as AdminRequest;
+    const res = createMockRes();
+
+    await getUserDetail(req, res);
+
+    const raw = JSON.stringify((res.json as any).mock.calls[0][0]);
+    expect(raw).not.toMatch(/"balance"/);
+    expect(raw).not.toMatch(/"amount"/i);
+    expect(raw).not.toMatch(/"targetAmount"/);
+    expect(raw).not.toMatch(/"currentAmount"/);
+    expect(raw).not.toMatch(/"password"/);
+    expect(raw).not.toMatch(/"googleSubject"/);
+
+    await prisma.account.deleteMany({ where: { userId: user.id } });
+    await prisma.goal.deleteMany({ where: { userId: user.id } });
   });
 });

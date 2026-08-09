@@ -2,9 +2,10 @@ import { useState, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
 import { useAuth } from '../hooks/useAuth';
+import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 
 const Register = () => {
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -26,6 +27,17 @@ const Register = () => {
       setError(message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleGoogleCredential = async (credential: string) => {
+    setError(null);
+    try {
+      await loginWithGoogle(credential);
+      navigate('/');
+    } catch (err) {
+      const message = (err as AxiosError<{ error: string }>).response?.data?.error || 'Sign-in failed';
+      setError(message);
     }
   };
 
@@ -104,6 +116,14 @@ const Register = () => {
             {submitting ? 'Creating account...' : 'Create account'}
           </button>
         </form>
+
+        <div className="my-4 flex items-center gap-3 text-xs text-gray-400">
+          <div className="h-px flex-1 bg-gray-200" />
+          OR
+          <div className="h-px flex-1 bg-gray-200" />
+        </div>
+
+        <GoogleSignInButton onCredential={handleGoogleCredential} />
 
         <p className="mt-4 text-center text-sm text-gray-600">
           Already have an account?{' '}
