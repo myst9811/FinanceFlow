@@ -79,12 +79,12 @@ const GoalForm = ({ initialValues, onSubmit, onCancel, submitting }: GoalFormPro
 
   return (
     <form onSubmit={handleSubmit} className="card space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">{isEditing ? 'Edit Goal' : 'Add Goal'}</h2>
+      <h2 className="text-lg font-semibold text-ink">{isEditing ? 'Edit Goal' : 'Add Goal'}</h2>
 
-      {error && <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+      {error && <div className="rounded-md bg-danger/10 p-3 text-sm text-danger">{error}</div>}
 
       <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="title" className="block text-sm font-medium text-ink">
           Title
         </label>
         <input
@@ -93,12 +93,12 @@ const GoalForm = ({ initialValues, onSubmit, onCancel, submitting }: GoalFormPro
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
         />
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="description" className="block text-sm font-medium text-ink">
           Description (optional)
         </label>
         <textarea
@@ -106,12 +106,12 @@ const GoalForm = ({ initialValues, onSubmit, onCancel, submitting }: GoalFormPro
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={2}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
         />
       </div>
 
       <div>
-        <label htmlFor="targetAmount" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="targetAmount" className="block text-sm font-medium text-ink">
           Target Amount
         </label>
         <input
@@ -122,13 +122,13 @@ const GoalForm = ({ initialValues, onSubmit, onCancel, submitting }: GoalFormPro
           required
           value={targetAmount}
           onChange={(e) => setTargetAmount(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
         />
       </div>
 
       {!isEditing && (
         <div>
-          <label htmlFor="currentAmount" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="currentAmount" className="block text-sm font-medium text-ink">
             Current Amount (optional)
           </label>
           <input
@@ -138,14 +138,14 @@ const GoalForm = ({ initialValues, onSubmit, onCancel, submitting }: GoalFormPro
             min="0"
             value={currentAmount}
             onChange={(e) => setCurrentAmount(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
           />
-          <p className="mt-1 text-xs text-gray-500">How much you've already saved toward this goal.</p>
+          <p className="mt-1 text-xs text-ink-muted">How much you've already saved toward this goal.</p>
         </div>
       )}
 
       <div>
-        <label htmlFor="targetDate" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="targetDate" className="block text-sm font-medium text-ink">
           Target Date
         </label>
         <input
@@ -155,20 +155,20 @@ const GoalForm = ({ initialValues, onSubmit, onCancel, submitting }: GoalFormPro
           min={isEditing ? undefined : todayForInput()}
           value={targetDate}
           onChange={(e) => setTargetDate(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
         />
       </div>
 
       {!isEditing && (
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="category" className="block text-sm font-medium text-ink">
             Category
           </label>
           <select
             id="category"
             value={category}
             onChange={(e) => setCategory(e.target.value as GoalCategory)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
           >
             {Object.values(GoalCategory).map((c) => (
               <option key={c} value={c}>
