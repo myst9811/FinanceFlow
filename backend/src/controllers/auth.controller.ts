@@ -84,7 +84,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     where: { email: email.toLowerCase() },
   });
 
-  if (!user) {
+  if (!user || !user.password) {
     throw new ApiError(401, 'Invalid email or password');
   }
 

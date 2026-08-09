@@ -16,14 +16,15 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  firstName String
-  lastName  String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String?
+  googleSubject String?  @unique
+  firstName     String
+  lastName      String
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   accounts     Account[]
   transactions Transaction[]
