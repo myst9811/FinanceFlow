@@ -4,3 +4,4 @@ export const API_CONFIG = {
 };
 
 export const AUTH_TOKEN_KEY = 'chronosfin_auth_token';
+export const THEME_STORAGE_KEY = 'chronosfin_theme';
