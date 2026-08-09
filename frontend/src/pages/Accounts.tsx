@@ -62,13 +62,13 @@ const Accounts = () => {
   };
 
   if (loading) {
-    return <p className="text-gray-500">Loading accounts...</p>;
+    return <p className="text-ink-muted">Loading accounts...</p>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Accounts</h1>
+        <h1 className="text-2xl font-bold text-ink">Accounts</h1>
         {!formMode && (
           <button onClick={handleCreate} className="btn-primary">
             Add Account
@@ -95,7 +95,7 @@ const Accounts = () => {
 
       <div className="space-y-4">
         {accounts.length === 0 && (
-          <p className="text-gray-500">No accounts yet. Add one to get started.</p>
+          <p className="text-ink-muted">No accounts yet. Add one to get started.</p>
         )}
         {accounts.map((account) => (
           <AccountCard

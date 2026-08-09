@@ -51,16 +51,16 @@ const AccountForm = ({ initialValues, onSubmit, onCancel, submitting }: AccountF
 
   return (
     <form onSubmit={handleSubmit} className="card space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">
+      <h2 className="text-lg font-semibold text-ink">
         {isEditing ? 'Edit Account' : 'Add Account'}
       </h2>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-md bg-danger/10 p-3 text-sm text-danger">{error}</div>
       )}
 
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="name" className="block text-sm font-medium text-ink">
           Name
         </label>
         <input
@@ -69,20 +69,20 @@ const AccountForm = ({ initialValues, onSubmit, onCancel, submitting }: AccountF
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
         />
       </div>
 
       {!isEditing && (
         <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="type" className="block text-sm font-medium text-ink">
             Type
           </label>
           <select
             id="type"
             value={type}
             onChange={(e) => setType(e.target.value as AccountType)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
           >
             <option value={AccountType.CHECKING}>Checking</option>
             <option value={AccountType.SAVINGS}>Savings</option>
@@ -93,7 +93,7 @@ const AccountForm = ({ initialValues, onSubmit, onCancel, submitting }: AccountF
       )}
 
       <div>
-        <label htmlFor="balance" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="balance" className="block text-sm font-medium text-ink">
           Balance
         </label>
         <input
@@ -104,9 +104,9 @@ const AccountForm = ({ initialValues, onSubmit, onCancel, submitting }: AccountF
           required
           value={balance}
           onChange={(e) => setBalance(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
         />
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-ink-muted">
           {isEditing
             ? 'Manually adjusting this overrides the balance directly, separate from transaction history.'
             : 'Starting balance for this account.'}
@@ -115,14 +115,14 @@ const AccountForm = ({ initialValues, onSubmit, onCancel, submitting }: AccountF
 
       {!isEditing && (
         <div>
-          <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="currency" className="block text-sm font-medium text-ink">
             Currency
           </label>
           <select
             id="currency"
             value={currency}
             onChange={(e) => setCurrency(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+            className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
           >
             {CURRENCIES.map((c) => (
               <option key={c} value={c}>
@@ -134,7 +134,7 @@ const AccountForm = ({ initialValues, onSubmit, onCancel, submitting }: AccountF
       )}
 
       <div>
-        <label htmlFor="bankName" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="bankName" className="block text-sm font-medium text-ink">
           Bank name (optional)
         </label>
         <input
@@ -142,12 +142,12 @@ const AccountForm = ({ initialValues, onSubmit, onCancel, submitting }: AccountF
           type="text"
           value={bankName}
           onChange={(e) => setBankName(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
         />
       </div>
 
       <div>
-        <label htmlFor="accountNumber" className="block text-sm font-medium text-gray-700">
+        <label htmlFor="accountNumber" className="block text-sm font-medium text-ink">
           Account number (optional)
         </label>
         <input
@@ -155,7 +155,7 @@ const AccountForm = ({ initialValues, onSubmit, onCancel, submitting }: AccountF
           type="text"
           value={accountNumber}
           onChange={(e) => setAccountNumber(e.target.value)}
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-primary-500 sm:text-sm"
+          className="mt-1 block w-full rounded-md border border-line bg-surface px-3 py-2 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
         />
       </div>
 
