@@ -40,7 +40,7 @@ model Account {
   name          String
   type          AccountType
   balance       Float       @default(0)
-  currency      String      @default("USD")
+  currency      String      @default("INR")
   isActive      Boolean     @default(true)
   bankName      String?
   accountNumber String?

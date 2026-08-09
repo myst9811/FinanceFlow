@@ -9,14 +9,14 @@ interface AccountFormProps {
   submitting: boolean;
 }
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
+const CURRENCIES = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
 
 const AccountForm = ({ initialValues, onSubmit, onCancel, submitting }: AccountFormProps) => {
   const isEditing = !!initialValues;
   const [name, setName] = useState(initialValues?.name ?? '');
   const [type, setType] = useState<AccountType>(initialValues?.type ?? AccountType.CHECKING);
   const [balance, setBalance] = useState(String(initialValues?.balance ?? 0));
-  const [currency, setCurrency] = useState(initialValues?.currency ?? 'USD');
+  const [currency, setCurrency] = useState(initialValues?.currency ?? 'INR');
   const [bankName, setBankName] = useState(initialValues?.bankName ?? '');
   const [accountNumber, setAccountNumber] = useState(initialValues?.accountNumber ?? '');
   const [error, setError] = useState<string | null>(null);

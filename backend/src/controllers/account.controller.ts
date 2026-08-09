@@ -32,7 +32,7 @@ export const createAccount = async (
       name: name.trim(),
       type,
       balance: balance || 0,
-      currency: currency || 'USD',
+      currency: currency || 'INR',
       bankName: bankName?.trim(),
       accountNumber: accountNumber?.trim(),
     },

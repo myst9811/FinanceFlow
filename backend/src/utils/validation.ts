@@ -66,7 +66,7 @@ export const validateLoginInput = (
 
 // Account validation
 const validAccountTypes = ['CHECKING', 'SAVINGS', 'CREDIT', 'INVESTMENT'];
-const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
+const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'INR'];
 
 export const validateAccountInput = (
   name: string,
