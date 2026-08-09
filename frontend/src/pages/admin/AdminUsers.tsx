@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import adminService from '../../services/admin.service';
 import { AdminUserListItem } from '../../types/admin.types';
 
@@ -86,7 +87,9 @@ const AdminUsers = () => {
               users.map((user) => (
                 <tr key={user.id}>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-white">
-                    {user.firstName} {user.lastName}
+                    <Link to={`/admin/users/${user.id}`} className="hover:text-primary-500">
+                      {user.firstName} {user.lastName}
+                    </Link>
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400">{user.email}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400">
