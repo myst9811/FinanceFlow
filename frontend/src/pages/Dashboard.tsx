@@ -27,9 +27,33 @@ function today(): string {
   return `${year}-${month}-${day}`;
 }
 
+// Clamped to the same day-of-month as today, so a partial current month
+// (e.g. the first 10 days of August) is compared against the same number
+// of days last month, not the full previous month.
+function previousMonthRange(): { startDate: string; endDate: string } {
+  const now = new Date();
+  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const year = prevMonth.getFullYear();
+  const month = String(prevMonth.getMonth() + 1).padStart(2, '0');
+  const daysInPrevMonth = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0).getDate();
+  const endDay = Math.min(now.getDate(), daysInPrevMonth);
+  return {
+    startDate: `${year}-${month}-01`,
+    endDate: `${year}-${month}-${String(endDay).padStart(2, '0')}`,
+  };
+}
+
+// null means "no meaningful trend" (zero activity in the prior period) --
+// shown as no change subtext at all rather than a fabricated 0%/Infinity%.
+function percentChange(current: number, previous: number): number | null {
+  if (previous === 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
 const Dashboard: React.FC = () => {
   const [summary, setSummary] = useState<AccountSummary | null>(null);
   const [stats, setStats] = useState<TransactionStats | null>(null);
+  const [previousStats, setPreviousStats] = useState<TransactionStats | null>(null);
   const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,13 +61,15 @@ const Dashboard: React.FC = () => {
   const loadAll = useCallback(async () => {
     setError(null);
     try {
-      const [summaryData, statsData, transactionsData] = await Promise.all([
+      const [summaryData, statsData, previousStatsData, transactionsData] = await Promise.all([
         accountService.getAccountSummary(),
         transactionService.getTransactionStats({ startDate: firstDayOfMonth(), endDate: today() }),
+        transactionService.getTransactionStats(previousMonthRange()),
         transactionService.getTransactions(),
       ]);
       setSummary(summaryData);
       setStats(statsData);
+      setPreviousStats(previousStatsData);
       setRecentTransactions(transactionsData);
     } catch {
       setError('Failed to load dashboard data. Please try again.');
@@ -83,6 +109,9 @@ const Dashboard: React.FC = () => {
   const netIncome = stats?.netIncome ?? 0;
   const savingsRate = totalIncome > 0 ? ((netIncome / totalIncome) * 100).toFixed(1) : '0.0';
 
+  const incomeTrend = percentChange(totalIncome, previousStats?.totalIncome ?? 0);
+  const expensesTrend = percentChange(totalExpenses, previousStats?.totalExpenses ?? 0);
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -101,11 +130,15 @@ const Dashboard: React.FC = () => {
         <StatCard
           title="Monthly Income"
           value={formatCurrency(totalIncome)}
+          change={incomeTrend !== null ? `${incomeTrend.toFixed(1)}% from last month` : undefined}
+          changeType={incomeTrend !== null && incomeTrend < 0 ? 'negative' : 'positive'}
           icon={ArrowTrendingUpIcon}
         />
         <StatCard
           title="Monthly Expenses"
           value={formatCurrency(totalExpenses)}
+          change={expensesTrend !== null ? `${expensesTrend.toFixed(1)}% from last month` : undefined}
+          changeType={expensesTrend !== null && expensesTrend > 0 ? 'negative' : 'positive'}
           icon={ArrowTrendingDownIcon}
         />
         <StatCard
