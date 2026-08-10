@@ -1,9 +1,34 @@
 import { Link } from 'react-router-dom';
 import AnimatedLogoMark from '../components/landing/AnimatedLogoMark';
 import GithubIcon from '../components/landing/GithubIcon';
+import { mockTransactions, mockGoals, mockAccounts } from '../data/mockData';
 import './Landing.css';
 
+// Deliberately independent of utils/formatters.ts's formatCurrency (which
+// defaults to INR for the real, logged-in app) -- this hero mockup is
+// decorative marketing content styled in USD regardless of the app's
+// actual default currency.
+const usdFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+function shortDate(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 const Landing = () => {
+  const checkingAccount = mockAccounts.find((a) => a.type === 'checking') ?? mockAccounts[0];
+  const monthlyIncome = mockTransactions
+    .filter((t) => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const ledgerTransactions = mockTransactions.slice(0, 4);
+  const ledgerGoal = mockGoals.find((g) => g.name === 'Emergency Fund') ?? mockGoals[0];
+  const ledgerGoalPct = Math.round((ledgerGoal.currentAmount / ledgerGoal.targetAmount) * 100);
+
   return (
     <div className="landing-page">
       <header className="site-header wrap">
@@ -37,39 +62,34 @@ const Landing = () => {
             <div className="ledger-head">
               <div>
                 <div className="label">Checking · Balance</div>
-                <div className="balance mono">$4,218.60</div>
+                <div className="balance mono">{usdFormatter.format(checkingAccount.balance)}</div>
               </div>
-              <span className="chip">+$2,150.00 this month</span>
+              <span className="chip">+{usdFormatter.format(monthlyIncome)} this month</span>
             </div>
 
-            <div className="ledger-row">
-              <span className="date mono">Aug 6</span>
-              <span className="desc"><span className="name">Groceries</span><span className="cat">Food &amp; Dining</span></span>
-              <span className="amt neg mono">-$86.40</span>
-            </div>
-            <div className="ledger-row">
-              <span className="date mono">Aug 4</span>
-              <span className="desc"><span className="name">Paycheck</span><span className="cat">Income · Salary</span></span>
-              <span className="amt pos mono">+$2,150.00</span>
-            </div>
-            <div className="ledger-row">
-              <span className="date mono">Aug 2</span>
-              <span className="desc"><span className="name">Electric bill</span><span className="cat">Bills &amp; Utilities</span></span>
-              <span className="amt neg mono">-$142.18</span>
-            </div>
-            <div className="ledger-row">
-              <span className="date mono">Jul 30</span>
-              <span className="desc"><span className="name">Transfer to Savings</span><span className="cat">Transfer</span></span>
-              <span className="amt neg mono">-$400.00</span>
-            </div>
+            {ledgerTransactions.map((transaction) => (
+              <div className="ledger-row" key={transaction.id}>
+                <span className="date mono">{shortDate(transaction.date)}</span>
+                <span className="desc">
+                  <span className="name">{transaction.description}</span>
+                  <span className="cat">{transaction.category}</span>
+                </span>
+                <span className={`amt ${transaction.amount < 0 ? 'neg' : 'pos'} mono`}>
+                  {transaction.amount < 0 ? '-' : '+'}
+                  {usdFormatter.format(Math.abs(transaction.amount))}
+                </span>
+              </div>
+            ))}
 
             <div className="ledger-goal">
               <div className="ledger-goal-top">
-                <span className="gname">Emergency Fund</span>
-                <span className="gpct mono">62%</span>
+                <span className="gname">{ledgerGoal.name}</span>
+                <span className="gpct mono">{ledgerGoalPct}%</span>
               </div>
-              <div className="ledger-goal-bar"><span></span></div>
-              <div className="ledger-goal-foot mono">$3,720 of $6,000 · on pace</div>
+              <div className="ledger-goal-bar"><span style={{ width: `${ledgerGoalPct}%` }}></span></div>
+              <div className="ledger-goal-foot mono">
+                {usdFormatter.format(ledgerGoal.currentAmount)} of {usdFormatter.format(ledgerGoal.targetAmount)} · on pace
+              </div>
             </div>
           </div>
         </section>
