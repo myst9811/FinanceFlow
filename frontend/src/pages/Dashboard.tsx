@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   BanknotesIcon,
   ArrowTrendingUpIcon,
@@ -7,23 +7,81 @@ import {
 } from '@heroicons/react/24/outline';
 import StatCard from '../components/common/StatCard';
 import RecentTransactions from '../components/dashboard/RecentTransactions';
-import { mockTransactions } from '../data/mockData';
+import accountService from '../services/account.service';
+import transactionService from '../services/transaction.service';
+import { AccountSummary, Transaction, TransactionStats } from '../types/api.types';
 import { formatCurrency } from '../utils/formatters';
 
+function firstDayOfMonth(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}-01`;
+}
+
+function today(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 const Dashboard: React.FC = () => {
-  // Calculate dashboard statistics
-  const totalIncome = mockTransactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const [summary, setSummary] = useState<AccountSummary | null>(null);
+  const [stats, setStats] = useState<TransactionStats | null>(null);
+  const [recentTransactions, setRecentTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const totalExpenses = Math.abs(
-    mockTransactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + t.amount, 0)
-  );
+  const loadAll = useCallback(async () => {
+    setError(null);
+    try {
+      const [summaryData, statsData, transactionsData] = await Promise.all([
+        accountService.getAccountSummary(),
+        transactionService.getTransactionStats({ startDate: firstDayOfMonth(), endDate: today() }),
+        transactionService.getTransactions(),
+      ]);
+      setSummary(summaryData);
+      setStats(statsData);
+      setRecentTransactions(transactionsData);
+    } catch {
+      setError('Failed to load dashboard data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const netBalance = totalIncome - totalExpenses;
-  const savingsRate = totalIncome > 0 ? ((netBalance / totalIncome) * 100).toFixed(1) : '0.0';
+  useEffect(() => {
+    setLoading(true);
+    loadAll();
+  }, [loadAll]);
+
+  if (loading) {
+    return <p className="text-ink-muted">Loading dashboard...</p>;
+  }
+
+  if (error) {
+    return (
+      <div className="card space-y-3">
+        <p className="text-danger">{error}</p>
+        <button
+          onClick={() => {
+            setLoading(true);
+            loadAll();
+          }}
+          className="btn-secondary"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  const totalIncome = stats?.totalIncome ?? 0;
+  const totalExpenses = stats?.totalExpenses ?? 0;
+  const netIncome = stats?.netIncome ?? 0;
+  const savingsRate = totalIncome > 0 ? ((netIncome / totalIncome) * 100).toFixed(1) : '0.0';
 
   return (
     <div className="space-y-6">
@@ -37,30 +95,24 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Balance"
-          value={formatCurrency(netBalance)}
-          change={`${savingsRate}% savings rate`}
-          changeType="positive"
+          value={formatCurrency(summary?.totalBalance ?? 0)}
           icon={WalletIcon}
         />
         <StatCard
           title="Monthly Income"
           value={formatCurrency(totalIncome)}
-          change="+12.5% from last month"
-          changeType="positive"
           icon={ArrowTrendingUpIcon}
         />
         <StatCard
           title="Monthly Expenses"
           value={formatCurrency(totalExpenses)}
-          change="-8.2% from last month"
-          changeType="positive"
           icon={ArrowTrendingDownIcon}
         />
         <StatCard
           title="Net Savings"
-          value={formatCurrency(netBalance)}
+          value={formatCurrency(netIncome)}
           change={`${savingsRate}% of income`}
-          changeType="positive"
+          changeType={netIncome >= 0 ? 'positive' : 'negative'}
           icon={BanknotesIcon}
         />
       </div>
@@ -82,7 +134,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Recent Transactions */}
-      <RecentTransactions transactions={mockTransactions} limit={8} />
+      <RecentTransactions transactions={recentTransactions} limit={8} />
 
       {/* Quick Actions */}
       <div className="card">
