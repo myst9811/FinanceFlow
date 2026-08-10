@@ -1,9 +1,15 @@
 import apiClient from '../lib/apiClient';
-import { CreateTransactionRequest, Transaction, TransactionType, UpdateTransactionRequest } from '../types/api.types';
+import { CreateTransactionRequest, Transaction, TransactionStats, TransactionType, UpdateTransactionRequest } from '../types/api.types';
 
 interface TransactionListFilters {
   accountId?: string;
   type?: TransactionType;
+}
+
+interface TransactionStatsFilters {
+  startDate?: string;
+  endDate?: string;
+  accountId?: string;
 }
 
 class TransactionService {
@@ -12,6 +18,13 @@ class TransactionService {
       params: filters,
     });
     return response.data.transactions;
+  }
+
+  async getTransactionStats(filters: TransactionStatsFilters = {}): Promise<TransactionStats> {
+    const response = await apiClient.get<{ stats: TransactionStats }>('/transactions/stats', {
+      params: filters,
+    });
+    return response.data.stats;
   }
 
   async createTransaction(data: CreateTransactionRequest): Promise<Transaction> {
