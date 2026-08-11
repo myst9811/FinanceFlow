@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   BanknotesIcon,
   ArrowTrendingUpIcon,
@@ -170,16 +171,13 @@ const Dashboard: React.FC = () => {
       {/* Quick Actions */}
       <div className="card">
         <h3 className="text-lg font-semibold text-ink mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="btn-primary">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Link to="/transactions" className="btn-primary block text-center">
             Add Transaction
-          </button>
-          <button className="btn-secondary">
-            Create Budget
-          </button>
-          <button className="btn-secondary">
+          </Link>
+          <Link to="/goals" className="btn-secondary block text-center">
             Set Goal
-          </button>
+          </Link>
         </div>
       </div>
     </div>
