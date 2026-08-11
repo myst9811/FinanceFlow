@@ -7,6 +7,8 @@ import {
 } from '@heroicons/react/24/outline';
 import StatCard from '../components/common/StatCard';
 import RecentTransactions from '../components/dashboard/RecentTransactions';
+import SpendingByCategoryChart from '../components/dashboard/SpendingByCategoryChart';
+import IncomeExpensesChart from '../components/dashboard/IncomeExpensesChart';
 import accountService from '../services/account.service';
 import transactionService from '../services/transaction.service';
 import { AccountSummary, Transaction, TransactionStats } from '../types/api.types';
@@ -150,19 +152,15 @@ const Dashboard: React.FC = () => {
         />
       </div>
 
-      {/* Charts Row - Placeholder for future charts */}
+      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
           <h3 className="text-lg font-semibold text-ink mb-4">Spending by Category</h3>
-          <div className="flex items-center justify-center h-64 bg-surface rounded-lg">
-            <p className="text-ink-muted">Chart coming soon...</p>
-          </div>
+          <SpendingByCategoryChart byCategory={stats?.byCategory ?? {}} />
         </div>
         <div className="card">
           <h3 className="text-lg font-semibold text-ink mb-4">Income vs Expenses</h3>
-          <div className="flex items-center justify-center h-64 bg-surface rounded-lg">
-            <p className="text-ink-muted">Chart coming soon...</p>
-          </div>
+          <IncomeExpensesChart totalIncome={totalIncome} totalExpenses={totalExpenses} />
         </div>
       </div>
 
